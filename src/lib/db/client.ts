@@ -1,6 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { PGlite } from '@electric-sql/pglite'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
@@ -22,7 +21,10 @@ export type Banco = PgDatabase<PgQueryResultHKT, typeof schema>
 export type BancoProducao = PostgresJsDatabase<typeof schema>
 export type BancoTeste = PgliteDatabase<typeof schema>
 
-const diretorioMigracoes = () => fileURLToPath(new URL('../../../migrations/', import.meta.url))
+// `process.cwd()` (em vez de `new URL(..., import.meta.url)`) evita que o
+// webpack do Next interprete o caminho como asset estático no build de
+// produção. Só `criarBancoTeste()` usa este diretório; o Vitest roda na raiz.
+const diretorioMigracoes = () => path.join(process.cwd(), 'migrations')
 
 /** Slot de injeção (testes). Nunca guarda o cliente de produção. */
 let bancoAtivo: Banco | undefined

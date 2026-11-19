@@ -82,9 +82,22 @@ export const assinaturas = pgTable('assinaturas', {
   criadoEm: timestamp('criado_em', { mode: 'date' }).defaultNow(),
 })
 
+/**
+ * Sessões autenticadas. `id` é o token opaco entregue no cookie; sem FKs
+ * porque a sessão é uma credencial, não um vínculo relacional do domínio.
+ */
+export const sessoes = pgTable('sessoes', {
+  id: text('id').primaryKey(),
+  usuarioId: text('usuario_id').notNull(),
+  empresaId: text('empresa_id').notNull(),
+  expiraEm: timestamp('expira_em', { mode: 'date' }).notNull(),
+  criadoEm: timestamp('criado_em', { mode: 'date' }).defaultNow(),
+})
+
 export type Empresa = typeof empresas.$inferSelect
 export type Usuario = typeof usuarios.$inferSelect
 export type ModeloVisita = typeof modelosVisita.$inferSelect
 export type Visita = typeof visitas.$inferSelect
 export type Foto = typeof fotos.$inferSelect
 export type Assinatura = typeof assinaturas.$inferSelect
+export type SessaoRegistro = typeof sessoes.$inferSelect

@@ -1,0 +1,54 @@
+import { eq } from 'drizzle-orm'
+import { z } from 'zod'
+
+import { verificarSenha } from '@/lib/auth/password'
+import { COOKIE_SESSAO, DURACAO_SESSAO_SEGUNDOS, criarSessao } from '@/lib/auth/session'
+import { db } from '@/lib/db/client'
+import { usuarios } from '@/lib/db/schema'
+
+const esquemaLogin = z.object({
+  email: z.email(),
+  senha: z.string().min(1),
+})
+
+export async function POST(req: Request) {
+  let corpo: unknown
+  try {
+    corpo = await req.json()
+  } catch {
+    return Response.json({ erro: 'Corpo da requisição inválido.' }, { status: 400 })
+  }
+
+  const dados = esquemaLogin.safeParse(corpo)
+  if (!dados.success) {
+    return Response.json({ erro: 'E-mail ou senha inválidos.' }, { status: 400 })
+  }
+
+  const [usuario] = await db
+    .select()
+    .from(usuarios)
+    .where(eq(usuarios.email, dados.data.email))
+    .limit(1)
+
+  // Resposta genérica: não revela se o e-mail existe.
+  if (!usuario?.senhaHash || !(await verificarSenha(dados.data.senha, usuario.senhaHash))) {
+    return Response.json({ erro: 'E-mail ou senha incorretos.' }, { status: 401 })
+  }
+
+  const token = await criarSessao(usuario.id, usuario.empresaId)
+
+  const cookie = [
+    `${COOKIE_SESSAO}=${token}`,
+    'HttpOnly',
+    'SameSite=Lax',
+    'Path=/',
+    `Max-Age=${DURACAO_SESSAO_SEGUNDOS}`,
+  ]
+  if (process.env.NODE_ENV === 'production') {
+    cookie.push('Secure')
+  }
+
+  const resposta = Response.json({ ok: true })
+  resposta.headers.append('Set-Cookie', cookie.join('; '))
+  return resposta
+}
