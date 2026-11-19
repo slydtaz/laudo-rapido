@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * junto com a tela de login; a API de login e o health check também precisam
  * responder sem cookie. Todo o resto é protegido por padrão.
  */
-const ROTAS_PUBLICAS = ['/', '/login', '/api/v1/auth/login', '/api/health']
+const ROTAS_PUBLICAS = ['/', '/login', '/api/v1/auth/login', '/api/health', '/o']
 
 /**
  * Checagem leve, segura no Edge runtime: apenas a presença do cookie `sessao`.
