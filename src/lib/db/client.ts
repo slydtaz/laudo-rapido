@@ -1,6 +1,3 @@
-import { readdir, readFile } from 'node:fs/promises'
-import path from 'node:path'
-
 import { PGlite } from '@electric-sql/pglite'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import { drizzle as drizzlePglite, type PgliteDatabase } from 'drizzle-orm/pglite'
@@ -10,6 +7,7 @@ import {
 } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
+import { aplicarMigracoes } from './migrar'
 import * as schema from './schema'
 
 /**
@@ -20,11 +18,6 @@ import * as schema from './schema'
 export type Banco = PgDatabase<PgQueryResultHKT, typeof schema>
 export type BancoProducao = PostgresJsDatabase<typeof schema>
 export type BancoTeste = PgliteDatabase<typeof schema>
-
-// `process.cwd()` (em vez de `new URL(..., import.meta.url)`) evita que o
-// webpack do Next interprete o caminho como asset estático no build de
-// produção. Só `criarBancoTeste()` usa este diretório; o Vitest roda na raiz.
-const diretorioMigracoes = () => path.join(process.cwd(), 'migrations')
 
 /** Slot de injeção (testes). Nunca guarda o cliente de produção. */
 let bancoAtivo: Banco | undefined
@@ -95,18 +88,6 @@ export async function withBanco<T>(
   }
 }
 
-async function aplicarMigracoes(pglite: PGlite): Promise<void> {
-  const diretorio = diretorioMigracoes()
-  const arquivos = (await readdir(diretorio))
-    .filter((arquivo) => arquivo.endsWith('.sql'))
-    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
-
-  for (const arquivo of arquivos) {
-    const sql = await readFile(path.join(diretorio, arquivo), 'utf8')
-    await pglite.exec(sql)
-  }
-}
-
 /**
  * Cria um banco Postgres em memória (PGlite) com todas as migrações aplicadas
  * em ordem numérica. Não altera o banco ativo — use `setBancoAtivo()` ou
@@ -115,6 +96,6 @@ async function aplicarMigracoes(pglite: PGlite): Promise<void> {
 export async function criarBancoTeste(): Promise<BancoTeste> {
   const pglite = new PGlite()
   const banco = drizzlePglite(pglite, { schema })
-  await aplicarMigracoes(pglite)
+  await aplicarMigracoes(banco, (comando) => pglite.exec(comando))
   return banco
 }
