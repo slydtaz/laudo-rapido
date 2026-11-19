@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 
-import { db } from '../db/client'
+import { db, type Banco } from '../db/client'
 import { assinaturas, fotos, visitas } from '../db/schema'
 // Import apenas de tipo: `sync.ts` roda no servidor e não deve carregar o Dexie.
 import type { VisitaLocal } from '../offline/queue'
@@ -14,10 +14,12 @@ import { salvarAssinatura, salvarFoto } from '../storage/client'
  * idempotência: `onConflictDoNothing` transforma reenvios em duplicatas sem
  * erro, e `capturadoEm` é propagado como recebido — nunca substituído por now().
  *
- * Mídia é enviada ao R2 e persistida aqui, antes que `sincronizarFila` remova
- * a pendência local: se qualquer upload/insert falhar, a exceção sobe e a
- * pendência é mantida para nova tentativa (RNF-02). Duplicatas não refazem
- * upload.
+ * Cada item roda em uma transação: insert da visita e toda a mídia são
+ * atômicos. Se o upload ao R2 ou qualquer insert falhar, a transação faz
+ * rollback e a exceção sobe — a rota responde 502 e `sincronizarFila` mantém a
+ * pendência. Na nova tentativa a visita não existe, então é criada de novo e a
+ * mídia é enviada (RNF-02, sem perda de fotos/assinatura). Duplicatas legítimas
+ * não refazem upload.
  */
 export async function sincronizarLote(
   itens: VisitaLocal[],
@@ -27,42 +29,50 @@ export async function sincronizarLote(
   let duplicadas = 0
 
   for (const item of itens) {
-    const inseridas = await db
-      .insert(visitas)
-      .values({
-        empresaId,
-        clientId: item.clientId,
-        modeloId: item.modeloId ?? null,
-        status: 'sincronizada',
-        dados: item.dados,
-        token: randomBytes(24).toString('base64url'),
-        capturadoEm: item.capturadoEm,
-      })
-      .onConflictDoNothing({ target: [visitas.empresaId, visitas.clientId] })
-      .returning()
+    const criouVisita = await db.transaction(async (tx) => {
+      const inseridas = await tx
+        .insert(visitas)
+        .values({
+          empresaId,
+          clientId: item.clientId,
+          modeloId: item.modeloId ?? null,
+          status: 'sincronizada',
+          dados: item.dados,
+          token: randomBytes(24).toString('base64url'),
+          capturadoEm: item.capturadoEm,
+        })
+        .onConflictDoNothing({ target: [visitas.empresaId, visitas.clientId] })
+        .returning()
 
-    if (inseridas.length === 0) {
+      // Duplicata: nada de mídia é reenviado e nada é persistido.
+      if (inseridas.length === 0) {
+        return false
+      }
+
+      await salvarMidia(tx, inseridas[0].id, item)
+      return true
+    })
+
+    if (criouVisita) {
+      criadas++
+    } else {
       duplicadas++
-      continue
     }
-
-    await salvarMidia(inseridas[0].id, item)
-    criadas++
   }
 
   return { criadas, duplicadas }
 }
 
-async function salvarMidia(visitaId: string, item: VisitaLocal): Promise<void> {
+async function salvarMidia(tx: Banco, visitaId: string, item: VisitaLocal): Promise<void> {
   for (const foto of item.fotos) {
     const buffer = Buffer.from(await foto.blob.arrayBuffer())
     const url = await salvarFoto(visitaId, buffer, foto.blob.type)
-    await db.insert(fotos).values({ visitaId, url, capturadoEm: foto.capturadoEm })
+    await tx.insert(fotos).values({ visitaId, url, capturadoEm: foto.capturadoEm })
   }
 
   if (item.assinatura) {
     const png = Buffer.from(await item.assinatura.arrayBuffer())
     const url = await salvarAssinatura(visitaId, png)
-    await db.insert(assinaturas).values({ visitaId, url })
+    await tx.insert(assinaturas).values({ visitaId, url })
   }
 }
