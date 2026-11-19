@@ -3,8 +3,8 @@
 import { useRef, useState, type PointerEvent } from 'react'
 
 type AssinaturaCanvasProps = {
-  visitaId: string
-  onSalva?: (url: string) => void
+  /** Recebe o PNG desenhado; `null` quando a área é limpa. */
+  onAssinatura: (blob: Blob | null) => void
 }
 
 // Reserva fixa igual ao limite de normalização (1200×400): em tablets com DPR 3
@@ -12,10 +12,16 @@ type AssinaturaCanvasProps = {
 const LARGURA = 1200
 const ALTURA = 400
 
-export default function AssinaturaCanvas({ visitaId, onSalva }: AssinaturaCanvasProps) {
+/**
+ * Área de assinatura reutilizável. Não depende de rota nem de rede: devolve o
+ * PNG como Blob para que o chamador enfileire com a visita (caminho offline).
+ */
+export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const desenhando = useRef(false)
-  const [salvando, setSalvando] = useState(false)
+  const temTraco = useRef(false)
+  const [podeConfirmar, setPodeConfirmar] = useState(false)
+  const [capturada, setCapturada] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   function ponto(event: PointerEvent<HTMLCanvasElement>) {
@@ -37,6 +43,9 @@ export default function AssinaturaCanvas({ visitaId, onSalva }: AssinaturaCanvas
     }
     event.currentTarget.setPointerCapture(event.pointerId)
     desenhando.current = true
+    temTraco.current = true
+    setPodeConfirmar(true)
+    setCapturada(false)
     setErro(null)
     ctx.strokeStyle = '#111827'
     ctx.lineWidth = 6
@@ -71,42 +80,35 @@ export default function AssinaturaCanvas({ visitaId, onSalva }: AssinaturaCanvas
       return
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    temTraco.current = false
+    setPodeConfirmar(false)
+    setCapturada(false)
     setErro(null)
+    onAssinatura(null)
   }
 
-  async function salvar() {
+  function confirmar() {
     const canvas = canvasRef.current
-    if (!canvas) {
+    if (!canvas || !temTraco.current) {
       return
     }
-    setSalvando(true)
-    setErro(null)
-    try {
-      const resposta = await fetch(`/api/v1/visitas/${visitaId}/assinar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dataUrl: canvas.toDataURL('image/png') }),
-      })
-      if (!resposta.ok) {
-        const falha = (await resposta.json().catch(() => ({}))) as { erro?: string }
-        throw new Error(falha.erro ?? 'Não foi possível salvar a assinatura.')
-      }
-      const corpo = (await resposta.json()) as { assinatura: { url: string } }
-      onSalva?.(corpo.assinatura.url)
-    } catch (erroEnvio) {
-      setErro(
-        erroEnvio instanceof Error
-          ? erroEnvio.message
-          : 'Não foi possível salvar a assinatura.',
-      )
-    } finally {
-      setSalvando(false)
-    }
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setErro('Não foi possível capturar a assinatura. Tente novamente.')
+          return
+        }
+        setCapturada(true)
+        setErro(null)
+        onAssinatura(blob)
+      },
+      'image/png',
+    )
   }
 
   return (
-    <section>
-      <p>Assinatura do cliente</p>
+    <section className="space-y-2">
+      <p className="font-medium">Assinatura do cliente</p>
       <canvas
         ref={canvasRef}
         width={LARGURA}
@@ -128,17 +130,27 @@ export default function AssinaturaCanvas({ visitaId, onSalva }: AssinaturaCanvas
         }}
       />
       {erro && (
-        <p role="alert" style={{ color: '#b00020' }}>
+        <p role="alert" className="text-red-700">
           {erro}
         </p>
       )}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={limpar} disabled={salvando}>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={limpar}
+          className="rounded border border-slate-300 px-3 py-2"
+        >
           Limpar
         </button>
-        <button type="button" onClick={salvar} disabled={salvando}>
-          {salvando ? 'Salvando…' : 'Salvar assinatura'}
+        <button
+          type="button"
+          onClick={confirmar}
+          disabled={!podeConfirmar}
+          className="rounded bg-teal-700 px-3 py-2 text-white disabled:opacity-50"
+        >
+          Confirmar assinatura
         </button>
+        {capturada && <span className="self-center text-sm text-teal-800">Assinatura capturada.</span>}
       </div>
     </section>
   )

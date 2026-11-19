@@ -1,14 +1,25 @@
 import { randomBytes } from 'node:crypto'
 
+import { and, eq } from 'drizzle-orm'
+
 import { db, type Banco } from '../db/client'
 import { assinaturas, fotos, visitas } from '../db/schema'
 // Import apenas de tipo: `sync.ts` roda no servidor e não deve carregar o Dexie.
 import type { VisitaLocal } from '../offline/queue'
-import { salvarAssinatura, salvarFoto } from '../storage/client'
+import { normalizarAssinatura, salvarAssinatura, salvarFoto } from '../storage/client'
+
+/** Link de entrega devolvido ao aparelho para cada visita sincronizada. */
+export type EntregaSync = { clientId: string; visitaId: string; token: string }
+
+export type ResultadoLote = {
+  criadas: number
+  duplicadas: number
+  entregas: EntregaSync[]
+}
 
 /**
- * Insere um lote de visitas do aparelho no tenant informado e devolve a
- * contagem de criadas e duplicadas.
+ * Insere um lote de visitas do aparelho no tenant informado e devolve as
+ * contagens e os links de entrega (inclusive para reenvios).
  *
  * `clientId` (UUIDv4 do cliente) + `empresaId` é a única chave de
  * idempotência: `onConflictDoNothing` transforma reenvios em duplicatas sem
@@ -19,17 +30,19 @@ import { salvarAssinatura, salvarFoto } from '../storage/client'
  * rollback e a exceção sobe — a rota responde 502 e `sincronizarFila` mantém a
  * pendência. Na nova tentativa a visita não existe, então é criada de novo e a
  * mídia é enviada (RNF-02, sem perda de fotos/assinatura). Duplicatas legítimas
- * não refazem upload.
+ * não refazem upload e devolvem o token original da visita já existente.
  */
 export async function sincronizarLote(
   itens: VisitaLocal[],
   empresaId: string,
-): Promise<{ criadas: number; duplicadas: number }> {
+): Promise<ResultadoLote> {
   let criadas = 0
   let duplicadas = 0
+  const entregas: EntregaSync[] = []
 
   for (const item of itens) {
-    const criouVisita = await db.transaction(async (tx) => {
+    const resultado = await db.transaction(async (tx) => {
+      const token = randomBytes(24).toString('base64url')
       const inseridas = await tx
         .insert(visitas)
         .values({
@@ -38,29 +51,41 @@ export async function sincronizarLote(
           modeloId: item.modeloId ?? null,
           status: 'sincronizada',
           dados: item.dados,
-          token: randomBytes(24).toString('base64url'),
+          token,
           capturadoEm: item.capturadoEm,
         })
         .onConflictDoNothing({ target: [visitas.empresaId, visitas.clientId] })
         .returning()
 
-      // Duplicata: nada de mídia é reenviado e nada é persistido.
+      // Duplicata: nada de mídia é reenviado; recupera o link original.
       if (inseridas.length === 0) {
-        return false
+        const [existente] = await tx
+          .select({ id: visitas.id, token: visitas.token })
+          .from(visitas)
+          .where(and(eq(visitas.empresaId, empresaId), eq(visitas.clientId, item.clientId)))
+          .limit(1)
+        return { criou: false, visitaId: existente?.id ?? null, token: existente?.token ?? null }
       }
 
       await salvarMidia(tx, inseridas[0].id, item)
-      return true
+      return { criou: true, visitaId: inseridas[0].id, token }
     })
 
-    if (criouVisita) {
+    if (resultado.criou) {
       criadas++
     } else {
       duplicadas++
     }
+    if (resultado.visitaId && resultado.token) {
+      entregas.push({
+        clientId: item.clientId,
+        visitaId: resultado.visitaId,
+        token: resultado.token,
+      })
+    }
   }
 
-  return { criadas, duplicadas }
+  return { criadas, duplicadas, entregas }
 }
 
 async function salvarMidia(tx: Banco, visitaId: string, item: VisitaLocal): Promise<void> {
@@ -71,7 +96,12 @@ async function salvarMidia(tx: Banco, visitaId: string, item: VisitaLocal): Prom
   }
 
   if (item.assinatura) {
-    const png = Buffer.from(await item.assinatura.arrayBuffer())
+    // O caminho offline também passa pela normalização do servidor: o Blob
+    // gerado no canvas vira data URL e é achatado/redimensionado uma única vez.
+    const mime = item.assinatura.type || 'image/png'
+    const bytes = Buffer.from(await item.assinatura.arrayBuffer())
+    const dataUrl = `data:${mime};base64,${bytes.toString('base64')}`
+    const png = await normalizarAssinatura(dataUrl)
     const url = await salvarAssinatura(visitaId, png)
     await tx.insert(assinaturas).values({ visitaId, url })
   }

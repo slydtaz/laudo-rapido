@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'Lote de visitas inválido.' }, { status: 400 })
   }
 
-  let resultado: { criadas: number; duplicadas: number }
+  let resultado: Awaited<ReturnType<typeof sincronizarLote>>
   try {
     resultado = await sincronizarLote(itens, sessao.empresaId)
   } catch {
