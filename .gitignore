@@ -9,4 +9,5 @@ coverage/
 pnpm-debug.log*
 npm-debug.log*
 .superpowers/
+.worktrees/
 .DS_Store
