@@ -5,7 +5,9 @@
  * segurança (vazamento entre contas no mesmo aparelho).
  */
 
-const VERSAO = 'laudo-rapido-v1'
+// v2: purga o cache v1, que podia conter HTML de /login gravado sob
+// /visitas/nova antes da correção do redirect.
+const VERSAO = 'laudo-rapido-v2'
 const CACHE_SHELL = `${VERSAO}-shell`
 const SHELL = ['/', '/visitas/nova', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']
 
@@ -68,13 +70,23 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(requisicao)
         .then((resposta) => {
-          if (resposta.ok && eShell(url.pathname)) {
+          // Um redirect (ex.: /visitas/nova -> /login quando a sessão expirou)
+          // NÃO pode ser gravado sob a URL original: gravaríamos a página de
+          // login como se fosse o app shell.
+          if (resposta.ok && !resposta.redirected && eShell(url.pathname)) {
             const copia = resposta.clone()
             caches.open(CACHE_SHELL).then((cache) => cache.put(url.pathname, copia))
           }
           return resposta
         })
-        .catch(async () => (await caches.match(url.pathname)) ?? (await caches.match('/'))),
+        .catch(async () => {
+          if (!eShell(url.pathname)) {
+            return Response.error()
+          }
+          // Fallback restrito ao app shell conhecido. Nunca serve /login,
+          // /api/* ou /o/* a partir do cache.
+          return (await caches.match(url.pathname)) ?? (await caches.match('/')) ?? Response.error()
+        }),
     )
     return
   }

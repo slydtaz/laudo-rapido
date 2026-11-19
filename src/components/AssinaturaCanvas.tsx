@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 
 type AssinaturaCanvasProps = {
   /** Recebe o PNG desenhado; `null` quando a área é limpa. */
@@ -23,6 +23,19 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
   const [podeConfirmar, setPodeConfirmar] = useState(false)
   const [capturada, setCapturada] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+
+  // Ref mantém o callback mais recente sem entrar nas dependências do efeito
+  // de mount: se `onAssinatura` fizesse parte delas, cada re-render (inclusive
+  // o posterior a `confirmar`) apagaria a assinatura recém-capturada.
+  const onAssinaturaRef = useRef(onAssinatura)
+  onAssinaturaRef.current = onAssinatura
+
+  useEffect(() => {
+    // Ao montar — inclusive após a remontagem provocada pela troca de `key`
+    // quando uma visita é salva — o canvas está em branco. Notifica o pai para
+    // que seu estado (`assinatura`) não divirja do estado interno do componente.
+    onAssinaturaRef.current(null)
+  }, [])
 
   function ponto(event: PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current

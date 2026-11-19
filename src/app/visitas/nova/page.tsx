@@ -11,9 +11,10 @@ import {
   pendenciasRestantes,
   sincronizarFila,
 } from '@/lib/offline/queue'
+import { proximoRascunho, rascunhoVazio, type RascunhoVisita } from '@/lib/offline/rascunho'
 
 type Modelo = { id: string; nome: string }
-type FotoSelecionada = { blob: Blob; capturadoEm: Date; nome: string }
+type FotoSelecionada = RascunhoVisita['fotos'][number]
 type Entrega = Awaited<ReturnType<typeof entregasSalvas>>[number]
 type ResultadoSync = Awaited<ReturnType<typeof sincronizarFila>>
 
@@ -21,13 +22,9 @@ const LIMITE_MB = Math.round(TAMANHO_MAXIMO_MIDIA / 1024 / 1024)
 
 export default function NovaVisitaPage() {
   const [clientId, setClientId] = useState('')
-  const [cliente, setCliente] = useState('')
-  const [tipo, setTipo] = useState('')
-  const [observacoes, setObservacoes] = useState('')
-  const [modeloId, setModeloId] = useState('')
+  const [empresaId, setEmpresaId] = useState<string | null>(null)
+  const [rascunho, setRascunho] = useState<RascunhoVisita>(() => rascunhoVazio())
   const [modelos, setModelos] = useState<Modelo[]>([])
-  const [fotos, setFotos] = useState<FotoSelecionada[]>([])
-  const [assinatura, setAssinatura] = useState<Blob | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
@@ -36,9 +33,11 @@ export default function NovaVisitaPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([])
   const [resultado, setResultado] = useState<ResultadoSync | null>(null)
 
-  const atualizarEstado = useCallback(async () => {
-    setPendentes(await pendenciasRestantes())
-    setEntregas(await entregasSalvas())
+  const { cliente, tipo, observacoes, modeloId, fotos, assinatura, assinaturaChave } = rascunho
+
+  const atualizarEstado = useCallback(async (tenant: string) => {
+    setPendentes(await pendenciasRestantes(tenant))
+    setEntregas(await entregasSalvas(tenant))
   }, [])
 
   const carregarModelos = useCallback(async () => {
@@ -54,14 +53,35 @@ export default function NovaVisitaPage() {
     }
   }, [])
 
+  const carregarSessao = useCallback(async () => {
+    try {
+      const resposta = await fetch('/api/v1/sessao')
+      if (!resposta.ok) {
+        setErro('Sua sessão expirou. Entre novamente para salvar e sincronizar visitas.')
+        return
+      }
+      const corpo = (await resposta.json()) as { empresaId: string }
+      if (corpo.empresaId) {
+        setEmpresaId(corpo.empresaId)
+      } else {
+        setErro('Não foi possível identificar sua empresa. Recarregue a página.')
+      }
+    } catch {
+      setErro('Não foi possível identificar sua empresa. Recarregue a página.')
+    }
+  }, [])
+
   const sincronizar = useCallback(async () => {
+    if (!empresaId) {
+      return
+    }
     setSincronizando(true)
     setErro(null)
     setMensagem(null)
     try {
-      const obtido = await sincronizarFila()
+      const obtido = await sincronizarFila(empresaId)
       setResultado(obtido)
-      await atualizarEstado()
+      await atualizarEstado(empresaId)
       if (obtido.enviadas > 0) {
         setMensagem(`${obtido.enviadas} visita(s) enviada(s).`)
       }
@@ -84,14 +104,22 @@ export default function NovaVisitaPage() {
     } finally {
       setSincronizando(false)
     }
-  }, [atualizarEstado])
+  }, [empresaId, atualizarEstado])
 
   useEffect(() => {
     // UUIDv4 gerado no navegador: chave de idempotência da visita (RF-08).
     setClientId(crypto.randomUUID())
-    void atualizarEstado()
+    void carregarSessao()
     void carregarModelos()
-  }, [atualizarEstado, carregarModelos])
+  }, [carregarSessao, carregarModelos])
+
+  useEffect(() => {
+    // Fila e links só são lidos quando o tenant é conhecido: nunca mostramos
+    // pendências/links de outra conta num aparelho compartilhado.
+    if (empresaId) {
+      void atualizarEstado(empresaId)
+    }
+  }, [empresaId, atualizarEstado])
 
   useEffect(() => {
     const aoFicarOnline = () => {
@@ -118,7 +146,7 @@ export default function NovaVisitaPage() {
         const blob = await reduzirFoto(arquivo)
         reduzidas.push({ blob, capturadoEm, nome: arquivo.name })
       }
-      setFotos((anteriores) => [...anteriores, ...reduzidas])
+      setRascunho((atual) => ({ ...atual, fotos: [...atual.fotos, ...reduzidas] }))
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : 'Não foi possível processar as fotos.')
     }
@@ -128,6 +156,11 @@ export default function NovaVisitaPage() {
     event.preventDefault()
     setErro(null)
     setMensagem(null)
+
+    if (!empresaId) {
+      setErro('Sua empresa ainda não foi identificada. Aguarde ou recarregue a página.')
+      return
+    }
 
     const id = clientId || crypto.randomUUID()
     const tipoFinal = tipo.trim() || modelos.find((modelo) => modelo.id === modeloId)?.nome.trim() || ''
@@ -149,26 +182,27 @@ export default function NovaVisitaPage() {
 
     setSalvando(true)
     try {
-      await enfileirarVisita({
-        clientId: id,
-        modeloId: modeloId || undefined,
-        dados: {
-          cliente: cliente.trim(),
-          tipo: tipoFinal,
-          observacoes,
+      await enfileirarVisita(
+        {
+          clientId: id,
+          modeloId: modeloId || undefined,
+          dados: {
+            cliente: cliente.trim(),
+            tipo: tipoFinal,
+            observacoes,
+          },
+          capturadoEm: new Date(),
+          fotos: fotos.map(({ blob, capturadoEm }) => ({ blob, capturadoEm })),
+          assinatura: assinatura ?? undefined,
         },
-        capturadoEm: new Date(),
-        fotos: fotos.map(({ blob, capturadoEm }) => ({ blob, capturadoEm })),
-        assinatura: assinatura ?? undefined,
-      })
-      await atualizarEstado()
+        empresaId,
+      )
+      await atualizarEstado(empresaId)
       setMensagem('Visita salva no aparelho. Envie quando houver internet para receber o link do laudo.')
-      setCliente('')
-      setTipo('')
-      setObservacoes('')
-      setModeloId('')
-      setFotos([])
-      setAssinatura(null)
+      // Uma única transição atômica limpa TODOS os campos, inclusive a
+      // assinatura, e avança a chave: o canvas remonta em branco e notifica
+      // `null`, mantendo pai e componente sincronizados para a próxima visita.
+      setRascunho(proximoRascunho(assinaturaChave))
       setResultado(null)
       setClientId(crypto.randomUUID())
     } catch {
@@ -209,7 +243,7 @@ export default function NovaVisitaPage() {
           <input
             id="cliente"
             value={cliente}
-            onChange={(event) => setCliente(event.target.value)}
+            onChange={(event) => setRascunho((atual) => ({ ...atual, cliente: event.target.value }))}
             required
             className="w-full rounded border border-slate-300 px-3 py-2"
             placeholder="Nome do cliente"
@@ -224,7 +258,7 @@ export default function NovaVisitaPage() {
             <input
               id="tipo"
               value={tipo}
-              onChange={(event) => setTipo(event.target.value)}
+              onChange={(event) => setRascunho((atual) => ({ ...atual, tipo: event.target.value }))}
               className="w-full rounded border border-slate-300 px-3 py-2"
               placeholder="Ex.: HVAC"
             />
@@ -236,7 +270,7 @@ export default function NovaVisitaPage() {
             <select
               id="modelo"
               value={modeloId}
-              onChange={(event) => setModeloId(event.target.value)}
+              onChange={(event) => setRascunho((atual) => ({ ...atual, modeloId: event.target.value }))}
               className="w-full rounded border border-slate-300 px-3 py-2"
             >
               <option value="">Sem modelo</option>
@@ -259,7 +293,7 @@ export default function NovaVisitaPage() {
           <textarea
             id="observacoes"
             value={observacoes}
-            onChange={(event) => setObservacoes(event.target.value)}
+            onChange={(event) => setRascunho((atual) => ({ ...atual, observacoes: event.target.value }))}
             maxLength={2000}
             rows={4}
             className="w-full rounded border border-slate-300 px-3 py-2"
@@ -291,7 +325,10 @@ export default function NovaVisitaPage() {
           )}
         </div>
 
-        <AssinaturaCanvas onAssinatura={(blob) => setAssinatura(blob)} />
+        <AssinaturaCanvas
+          key={assinaturaChave}
+          onAssinatura={(blob) => setRascunho((atual) => ({ ...atual, assinatura: blob }))}
+        />
 
         {erro && (
           <p role="alert" className="rounded bg-red-50 p-3 text-red-700">
@@ -306,11 +343,14 @@ export default function NovaVisitaPage() {
 
         <button
           type="submit"
-          disabled={salvando}
+          disabled={salvando || !empresaId}
           className="rounded bg-teal-700 px-4 py-2 text-white disabled:opacity-50"
         >
           {salvando ? 'Salvando…' : 'Salvar visita no aparelho'}
         </button>
+        {!empresaId && (
+          <p className="text-xs text-slate-500">Aguarde a identificação da sessão para salvar.</p>
+        )}
       </form>
 
       <section className="space-y-3 border-t border-slate-200 pt-4">
@@ -318,7 +358,7 @@ export default function NovaVisitaPage() {
           <button
             type="button"
             onClick={() => void sincronizar()}
-            disabled={sincronizando}
+            disabled={sincronizando || !empresaId}
             className="rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50"
           >
             {sincronizando ? 'Enviando…' : 'Sincronizar agora'}
@@ -332,7 +372,7 @@ export default function NovaVisitaPage() {
           </p>
         )}
 
-        {entregas.length > 0 && (
+        {empresaId && entregas.length > 0 && (
           <div className="space-y-2">
             <h2 className="font-medium">Links dos laudos entregues</h2>
             <ul className="space-y-2">

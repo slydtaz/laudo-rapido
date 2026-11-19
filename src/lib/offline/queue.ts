@@ -20,11 +20,15 @@ type EntregaRecebida = { clientId: string; visitaId: string; token: string }
 
 const ROTA_SINCRONIZACAO = '/api/v1/visitas/sync'
 
-/** Grava a visita no aparelho e a registra como pendente de envio. */
-export async function enfileirarVisita(visita: VisitaLocal): Promise<void> {
+/**
+ * Grava a visita no aparelho e a registra como pendente de envio.
+ * `empresaId` vem da sessão (via `/api/v1/sessao`) e acompanha a pendência
+ * para que outra conta no mesmo aparelho não a envie sob seu próprio cookie.
+ */
+export async function enfileirarVisita(visita: VisitaLocal, empresaId: string): Promise<void> {
   await fila.transaction('rw', fila.visitas, fila.pendencias, async () => {
     await fila.visitas.put(visita)
-    await fila.pendencias.put({ clientId: visita.clientId, criadoEm: new Date() })
+    await fila.pendencias.put({ clientId: visita.clientId, empresaId, criadoEm: new Date() })
   })
 }
 
@@ -39,8 +43,13 @@ export async function enfileirarVisita(visita: VisitaLocal): Promise<void> {
  * tamanho para a UI explicar ao técnico (não é retry cego). Duplicata
  * legítima (2xx) limpa a pendência e recupera o link original.
  */
-export async function sincronizarFila(): Promise<ResultadoSincronizacao> {
-  const pendencias: PendenciaOffline[] = await fila.pendencias.orderBy('criadoEm').toArray()
+export async function sincronizarFila(empresaId: string): Promise<ResultadoSincronizacao> {
+  // Apenas as pendências DO tenant atual: nunca enviamos dados locais de
+  // outra conta sob a sessão corrente.
+  const pendencias: PendenciaOffline[] = await fila.pendencias
+    .where('empresaId')
+    .equals(empresaId)
+    .sortBy('criadoEm')
   const resultado: ResultadoSincronizacao = {
     enviadas: 0,
     falhas: 0,
@@ -69,6 +78,7 @@ export async function sincronizarFila(): Promise<ResultadoSincronizacao> {
 
       const entregas = entregasDaResposta(await resposta.json()).map((entrega) => ({
         ...entrega,
+        empresaId,
         criadoEm: new Date(),
       }))
       await fila.transaction('rw', fila.pendencias, fila.entregas, async () => {
@@ -87,14 +97,14 @@ export async function sincronizarFila(): Promise<ResultadoSincronizacao> {
   return resultado
 }
 
-/** Quantas visitas ainda aguardam envio no aparelho. */
-export async function pendenciasRestantes(): Promise<number> {
-  return fila.pendencias.count()
+/** Quantas visitas do tenant ainda aguardam envio neste aparelho. */
+export async function pendenciasRestantes(empresaId: string): Promise<number> {
+  return fila.pendencias.where('empresaId').equals(empresaId).count()
 }
 
-/** Links já entregues, do mais recente para o mais antigo. */
-export async function entregasSalvas(): Promise<EntregaLocal[]> {
-  const entregas = await fila.entregas.orderBy('criadoEm').toArray()
+/** Links do tenant já entregues, do mais recente para o mais antigo. */
+export async function entregasSalvas(empresaId: string): Promise<EntregaLocal[]> {
+  const entregas = await fila.entregas.where('empresaId').equals(empresaId).sortBy('criadoEm')
   return entregas.reverse()
 }
 
