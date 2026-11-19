@@ -1,29 +1,14 @@
-import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { lerSessao } from '@/lib/auth/session'
 import { db } from '@/lib/db/client'
-import { assinaturas, visitas } from '@/lib/db/schema'
+import { assinaturas } from '@/lib/db/schema'
 import { extrairDataUrl, normalizarAssinatura, salvarAssinatura } from '@/lib/storage/client'
-
-const ERRO_SESSAO = { erro: 'Sessão inválida ou expirada.' }
+import { ERRO_SESSAO, visitaDoTenant } from '@/lib/visita/acesso'
 
 const assinaturaSchema = z.object({
   dataUrl: z.string().min(1),
 })
-
-/** RF-08: a visita só é visível ao tenant da sessão; empresaId nunca vem do corpo. */
-async function visitaDoTenant(id: string, empresaId: string) {
-  if (!z.uuid().safeParse(id).success) {
-    return null
-  }
-  const [visita] = await db
-    .select({ id: visitas.id })
-    .from(visitas)
-    .where(and(eq(visitas.id, id), eq(visitas.empresaId, empresaId)))
-    .limit(1)
-  return visita ?? null
-}
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const sessao = await lerSessao(req)
