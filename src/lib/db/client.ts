@@ -24,7 +24,11 @@ export type BancoTeste = PgliteDatabase<typeof schema>
 
 const diretorioMigracoes = () => fileURLToPath(new URL('../../../migrations/', import.meta.url))
 
+/** Slot de injeção (testes). Nunca guarda o cliente de produção. */
 let bancoAtivo: Banco | undefined
+
+/** Cache do cliente de produção: um único pool de conexões por processo. */
+let bancoProducao: BancoProducao | undefined
 
 function bancoDeProducao(): BancoProducao {
   const url = process.env.DATABASE_URL
@@ -36,7 +40,11 @@ function bancoDeProducao(): BancoProducao {
 }
 
 function bancoAtual(): Banco {
-  return bancoAtivo ?? bancoDeProducao()
+  if (bancoAtivo) {
+    return bancoAtivo
+  }
+  bancoProducao ??= bancoDeProducao()
+  return bancoProducao
 }
 
 /**
