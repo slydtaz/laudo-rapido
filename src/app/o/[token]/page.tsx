@@ -18,7 +18,7 @@ export default async function PaginaEntrega({
     notFound()
   }
 
-  const bytes = await gerarPdf(visita)
+  const bytes = await gerarPdf({ ...visita, nomePrestador: visita.nomePrestador ?? undefined })
   const pdf = `data:application/pdf;base64,${Buffer.from(bytes).toString('base64')}`
 
   return (

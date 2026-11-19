@@ -1,13 +1,14 @@
 import { asc, eq } from 'drizzle-orm'
 
 import { db } from '../db/client'
-import { assinaturas, fotos, visitas } from '../db/schema'
+import { assinaturas, empresas, fotos, visitas } from '../db/schema'
 import type { Assinatura, Foto, Visita } from '../db/schema'
 
-/** Visita completa, com a mídia necessária para montar o laudo. */
+/** Visita completa, com a mídia e o prestador necessários para o laudo. */
 export type VisitaPublica = Visita & {
   fotos: Foto[]
   assinatura: Assinatura | null
+  nomePrestador: string | null
 }
 
 /**
@@ -30,7 +31,7 @@ export async function buscarVisitaPublica(token: string): Promise<VisitaPublica 
     return null
   }
 
-  const [fotosDaVisita, [assinatura]] = await Promise.all([
+  const [fotosDaVisita, [assinatura], [empresa]] = await Promise.all([
     db
       .select()
       .from(fotos)
@@ -41,11 +42,17 @@ export async function buscarVisitaPublica(token: string): Promise<VisitaPublica 
       .from(assinaturas)
       .where(eq(assinaturas.visitaId, visita.id))
       .limit(1),
+    db
+      .select({ nome: empresas.nome })
+      .from(empresas)
+      .where(eq(empresas.id, visita.empresaId))
+      .limit(1),
   ])
 
   return {
     ...visita,
     fotos: fotosDaVisita,
     assinatura: assinatura ?? null,
+    nomePrestador: empresa?.nome ?? null,
   }
 }

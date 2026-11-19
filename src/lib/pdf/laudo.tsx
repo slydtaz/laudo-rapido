@@ -16,10 +16,11 @@ import type { Assinatura, Foto, Visita } from '../db/schema'
  * cru. `createElement` monta a mesma árvore React e funciona nos dois.
  */
 
-/** Visita aceita pelo gerador; mídia é opcional para o laudo apenas textual. */
+/** Visita aceita pelo gerador; mídia e prestador são opcionais. */
 export type Laudo = Visita & {
   fotos?: Foto[]
   assinatura?: Assinatura | null
+  nomePrestador?: string
 }
 
 const estilos = StyleSheet.create({
@@ -64,7 +65,15 @@ function texto(valor: unknown): string {
   return JSON.stringify(valor)
 }
 
-function nomeEmpresa(dados: Record<string, unknown>): string {
+/**
+ * RF-05: identificação do prestador. A fonte é o nome da empresa do tenant,
+ * carregado pelas rotas de entrega; `dados.empresa` e a marca são fallback.
+ */
+function nomeEmpresa(visita: Laudo): string {
+  const { nomePrestador, dados } = visita
+  if (typeof nomePrestador === 'string' && nomePrestador.trim()) {
+    return nomePrestador
+  }
   const candidato = dados.empresa
   return typeof candidato === 'string' && candidato.trim() ? candidato : 'LaudoRápido'
 }
@@ -95,7 +104,7 @@ function Relatorio({ visita }: { visita: Laudo }) {
       h(
         View,
         { style: estilos.cabecalho },
-        h(Text, { style: estilos.marca }, nomeEmpresa(visita.dados)),
+        h(Text, { style: estilos.marca }, nomeEmpresa(visita)),
         h(Text, { style: estilos.titulo }, 'Relatório de Visita'),
       ),
       h(Text, { style: estilos.secao }, 'Dados do cliente'),
