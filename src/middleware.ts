@@ -22,6 +22,12 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  // Rotas de API não devem ser redirecionadas para uma página de login:
+  // o cliente precisa do 401 JSON para tratar a sessão expirada.
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json({ erro: 'Sessão inválida ou expirada.' }, { status: 401 })
+  }
+
   const url = req.nextUrl.clone()
   url.pathname = '/login'
   url.search = ''
