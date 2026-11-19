@@ -20,6 +20,7 @@
     "dexie": "^4.4.7",
     "drizzle-orm": "^0.45.4",
     "next": "15",
+    "postgres": "^3.4.9",
     "react": "19",
     "react-dom": "19",
     "resend": "^6.39.0",
