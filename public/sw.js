@@ -5,9 +5,10 @@
  * segurança (vazamento entre contas no mesmo aparelho).
  */
 
-// v2: purga o cache v1, que podia conter HTML de /login gravado sob
-// /visitas/nova antes da correção do redirect.
-const VERSAO = 'laudo-rapido-v2'
+// v3: purga o cache v2, que mantinha chunks do Next em cache-first. No dev,
+// o nome de app/layout.js é estável enquanto o runtime muda a cada build;
+// isso servia um chunk antigo e quebrava a hidratação.
+const VERSAO = 'laudo-rapido-v3'
 const CACHE_SHELL = `${VERSAO}-shell`
 const SHELL = ['/', '/visitas/nova', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']
 
@@ -40,7 +41,9 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((chaves) =>
         Promise.all(
-          chaves.filter((chave) => chave !== CACHE_SHELL).map((chave) => caches.delete(chave)),
+          chaves
+            .filter((chave) => chave.startsWith('laudo-rapido-') && chave !== CACHE_SHELL)
+            .map((chave) => caches.delete(chave)),
         ),
       )
       .then(() => self.clients.claim()),
@@ -92,18 +95,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (eAssetEstatico(url.pathname)) {
+    // Rede primeiro: o cache existe só como fallback offline. Servir um chunk
+    // antigo com um runtime novo gera o erro "reading 'call'" na hidratação.
     event.respondWith(
-      caches.match(requisicao).then(
-        (cacheado) =>
-          cacheado ??
-          fetch(requisicao).then((resposta) => {
-            if (resposta.ok) {
-              const copia = resposta.clone()
-              caches.open(CACHE_SHELL).then((cache) => cache.put(requisicao, copia))
-            }
-            return resposta
-          }),
-      ),
+      fetch(requisicao)
+        .then((resposta) => {
+          if (resposta.ok) {
+            const copia = resposta.clone()
+            caches.open(CACHE_SHELL).then((cache) => cache.put(requisicao, copia))
+          }
+          return resposta
+        })
+        .catch(async () => (await caches.match(requisicao)) ?? Response.error()),
     )
   }
 })
