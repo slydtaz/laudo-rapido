@@ -8,8 +8,16 @@ import { NextResponse, type NextRequest } from 'next/server'
 const ROTAS_PUBLICAS = [
   '/',
   '/login',
+  '/registro',
+  '/verificar-email',
+  '/esqueci-senha',
+  '/redefinir-senha',
   '/api/v1/auth/login',
   '/api/v1/auth/logout',
+  '/api/v1/auth/registro',
+  '/api/v1/auth/verificar',
+  '/api/v1/auth/senha',
+  '/api/v1/auth/google',
   '/api/health',
   '/o',
 ]
