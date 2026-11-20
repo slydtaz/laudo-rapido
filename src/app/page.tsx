@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { useT } from '@/lib/i18n/useT'
+import { entregasSalvas, pendenciasRestantes } from '@/lib/offline/queue'
 
 export default function HomePage() {
   const t = useT()
   const [online, setOnline] = useState(true)
+  const [resumo, setResumo] = useState({ pendentes: 0, entregues: 0 })
 
   useEffect(() => {
     const atualizar = () => setOnline(navigator.onLine)
@@ -17,6 +19,31 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('online', atualizar)
       window.removeEventListener('offline', atualizar)
+    }
+  }, [])
+
+  useEffect(() => {
+    let ativo = true
+
+    void (async () => {
+      try {
+        const resposta = await fetch('/api/v1/sessao')
+        if (!resposta.ok) return
+        const { empresaId } = (await resposta.json()) as { empresaId?: string }
+        if (!empresaId || !ativo) return
+
+        const [pendentes, entregas] = await Promise.all([
+          pendenciasRestantes(empresaId),
+          entregasSalvas(empresaId),
+        ])
+        if (ativo) setResumo({ pendentes, entregues: entregas.length })
+      } catch {
+        // Sem sessão ou sem IndexedDB, o resumo permanece em zero.
+      }
+    })()
+
+    return () => {
+      ativo = false
     }
   }, [])
 
@@ -50,6 +77,24 @@ export default function HomePage() {
           {t('homeAcao')}
           <span aria-hidden="true">→</span>
         </Link>
+      </section>
+
+      <section className="space-y-3" aria-label={t('homeResumo')}>
+        <h2 className="reveal-2 text-sm font-medium text-muted">{t('homeResumo')}</h2>
+        <div className="card reveal-3 grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
+          <div className="flex items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft font-display text-2xl font-semibold text-accent">
+              {resumo.pendentes}
+            </span>
+            <p className="text-sm leading-snug text-muted">{t('homePendentes')}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-success-soft font-display text-2xl font-semibold text-success">
+              {resumo.entregues}
+            </span>
+            <p className="text-sm leading-snug text-muted">{t('homeEntregas')}</p>
+          </div>
+        </div>
       </section>
 
       <section className="space-y-3">

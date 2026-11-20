@@ -48,6 +48,12 @@ describe('dicionário de idiomas', () => {
     expect(document.documentElement.lang).toBe('en')
   })
 
+  it('oferece o rótulo do resumo local na home em todos os idiomas', () => {
+    for (const idioma of IDIOMAS) {
+      expect(IDIOMAS_TEXTOS[idioma].homeResumo.length, idioma).toBeGreaterThan(0)
+    }
+  })
+
   it('preserva os rótulos usados pelos testes de smoke em PT-BR', () => {
     expect(ptBR.loginBotao).toBe('Entrar')
     expect(ptBR.homeAcao).toBe('Registrar nova visita')

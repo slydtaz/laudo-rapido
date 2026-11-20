@@ -20,6 +20,7 @@ export const ptBR = {
   homePendentes: 'pendentes de envio',
   homeEntregas: 'laudos entregues',
   homeMaisTarde: 'Acesso rápido',
+  homeResumo: 'Seu resumo',
 
   loginTitulo: 'Entrar no LaudoRápido',
   loginSubtitulo: 'Use seu e-mail e senha de técnico para registrar visitas.',
@@ -172,6 +173,7 @@ const en: DicionarioTextos = {
   homePendentes: 'waiting to upload',
   homeEntregas: 'reports delivered',
   homeMaisTarde: 'Quick access',
+  homeResumo: 'Your summary',
 
   loginTitulo: 'Sign in to LaudoRápido',
   loginSubtitulo: 'Use your technician email and password to register visits.',
@@ -321,6 +323,7 @@ const es: DicionarioTextos = {
   homePendentes: 'pendientes de envío',
   homeEntregas: 'informes entregados',
   homeMaisTarde: 'Acceso rápido',
+  homeResumo: 'Tu resumen',
 
   loginTitulo: 'Entrar en LaudoRápido',
   loginSubtitulo: 'Usa tu correo y contraseña de técnico para registrar visitas.',
@@ -470,6 +473,7 @@ const fr: DicionarioTextos = {
   homePendentes: "en attente d'envoi",
   homeEntregas: 'rapports livrés',
   homeMaisTarde: 'Accès rapide',
+  homeResumo: 'Votre résumé',
 
   loginTitulo: 'Connexion à LaudoRápido',
   loginSubtitulo: 'Utilisez votre e-mail et votre mot de passe technique pour enregistrer des visites.',
@@ -619,6 +623,7 @@ const de: DicionarioTextos = {
   homePendentes: 'warten auf Versand',
   homeEntregas: 'Berichte zugestellt',
   homeMaisTarde: 'Schnellzugriff',
+  homeResumo: 'Ihre Übersicht',
 
   loginTitulo: 'Bei LaudoRápido anmelden',
   loginSubtitulo: 'Melden Sie sich mit Ihrer Techniker-E-Mail und Ihrem Passwort an.',
