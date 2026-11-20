@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import RegistradorSW from '@/components/RegistradorSW'
+import ToastProvider from '@/components/ToastProvider'
 
 import './globals.css'
 
@@ -62,8 +63,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <ProvedorPreferencias>
-          <RegistradorSW />
-          {children}
+          <ToastProvider>
+            <RegistradorSW />
+            {children}
+          </ToastProvider>
         </ProvedorPreferencias>
       </body>
     </html>
