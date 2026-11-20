@@ -1,4 +1,5 @@
-import { COOKIE_SESSAO, encerrarSessao } from '@/lib/auth/session'
+import { cookieSessaoExpirado } from '@/lib/auth/cookie'
+import { encerrarSessao } from '@/lib/auth/session'
 
 /**
  * Logout idempotente: remove a sessão do banco (se houver) e sempre expira
@@ -8,18 +9,7 @@ import { COOKIE_SESSAO, encerrarSessao } from '@/lib/auth/session'
 export async function POST(req: Request) {
   await encerrarSessao(req)
 
-  const cookie = [
-    `${COOKIE_SESSAO}=`,
-    'HttpOnly',
-    'SameSite=Lax',
-    'Path=/',
-    'Max-Age=0',
-  ]
-  if (process.env.NODE_ENV === 'production') {
-    cookie.push('Secure')
-  }
-
   const resposta = Response.json({ ok: true })
-  resposta.headers.append('Set-Cookie', cookie.join('; '))
+  resposta.headers.append('Set-Cookie', cookieSessaoExpirado())
   return resposta
 }

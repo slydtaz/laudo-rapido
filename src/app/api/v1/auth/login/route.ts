@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
+import { definirCookieSessao } from '@/lib/auth/cookie'
 import { verificarSenha } from '@/lib/auth/password'
-import { COOKIE_SESSAO, DURACAO_SESSAO_SEGUNDOS, criarSessao } from '@/lib/auth/session'
+import { criarSessao } from '@/lib/auth/session'
 import { db } from '@/lib/db/client'
 import { usuarios } from '@/lib/db/schema'
 
@@ -37,18 +38,7 @@ export async function POST(req: Request) {
 
   const token = await criarSessao(usuario.id, usuario.empresaId)
 
-  const cookie = [
-    `${COOKIE_SESSAO}=${token}`,
-    'HttpOnly',
-    'SameSite=Lax',
-    'Path=/',
-    `Max-Age=${DURACAO_SESSAO_SEGUNDOS}`,
-  ]
-  if (process.env.NODE_ENV === 'production') {
-    cookie.push('Secure')
-  }
-
   const resposta = Response.json({ ok: true })
-  resposta.headers.append('Set-Cookie', cookie.join('; '))
+  resposta.headers.append('Set-Cookie', definirCookieSessao(token))
   return resposta
 }
