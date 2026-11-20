@@ -57,18 +57,18 @@ A opção 1 foi escolhida porque preserva a arquitetura que já passou por smoke
 ### Migração `0003_auth.sql`
 
 - `usuarios.nome text` — nome exibido no perfil; para conta Google vem do `name` do perfil.
-- `usuarios.google_sub text` com índice único — `sub` do Google; several valores nulos são aceitos pelo Postgres.
+- `usuarios.google_sub text` com índice único — `sub` do Google; múltiplos valores nulos são aceitos pelo Postgres.
 - `usuarios.email_verificado_em timestamp` — preenchido pelo Fluxo de verificação ou automaticamente no Google (somente quando `email_verified` for `true`).
 - Nova tabela `tokens_auth`: `id text` (hash SHA-256 do token bruto), `usuario_id uuid` com FK para `usuarios`, `tipo text` com check em (`verificar_email`, `redefinir_senha`), `expira_em timestamp`, `usado_em timestamp`, `criado_em timestamp default now()`.
 - `sessoes` continua sem FK, como credencial.
 
 ### Serviços
 
-- `src/lib/auth/cookie.ts`: centraliza `definirCookieSessao`, `expirarCookieSessao` e o cookie temporário `oauth` (state + verifier + retorno, HttpOnly, 10 min). Hoje a montagem do cookie está duplicada na rota de login; vai virar helper único.
+- `src/lib/auth/cookie.ts`: centraliza `definirCookieSessao`, `expirarCookieSessao` e o cookie temporário `oauth` (somente state + verifier, HttpOnly, 10 min). Hoje a montagem do cookie está duplicada na rota de login; vai virar helper único.
 - `src/lib/auth/tokens.ts`: gera token opaco, guarda só o hash, consome uma vez, valida expiração (30 min para redefinição, 24 h para verificação) e aplica cooldown de 60 s por e-mail/tipo para evitar abuso.
 - `src/lib/auth/email.ts`: interface `EnviadorEmail`. Em desenvolvimento sem provedor, devolve o link/token na resposta e mostra na tela, com aviso explícito de que é modo demo. Em produção, usa `EMAIL_WEBHOOK_URL` se configurado; se não estiver, a solicitação responde `202` genérico e **não** registra token em log.
 - `src/lib/auth/google.ts`: monta a URL de autorização com `code_challenge` S256, troca o código no endpoint de token, busca JWKS em `https://www.googleapis.com/oauth2/v3/certs` (cache em memória curto) e valida `iss`, `aud`, `exp` e `email_verified`. Nunca confia em e-mail não verificado.
-- `src/lib/auth/conta.ts`: operações de domínio (`criarContaComSenha`, `vincularOuCriarGoogle`, `verificarEmail`, `redefinirSenha`, `atualizarNome`, `trocarSenha`). Toda troca de senha apaga as sessões do usuário, menos a atual quando aplicável.
+- `src/lib/auth/conta.ts`: operações de domínio (`criarContaComSenha`, `vincularOuCriarGoogle`, `verificarEmail`, `redefinirSenha`, `atualizarNome`, `trocarSenha`). Toda troca de senha apaga as sessões do usuário, menos a atual quando aplicável. `vincularOuCriarGoogle` vincula apenas quando o `email_verified` do Google **e** o `emailVerificadoEm` local estão presentes; conta local existente e não verificada recebe recusa com caminho de recuperação (entrar com senha, verificar e-mail, tentar de novo), nunca é vinculada nem marcada como verificada. Conta nova criada pelo Google recebe `empresas.nome = "Minha empresa"` e `usuarios.nome` vindo do perfil; ambos editáveis em `/conta`.
 
 ### Rotas
 
@@ -81,7 +81,7 @@ A opção 1 foi escolhida porque preserva a arquitetura que já passou por smoke
 | POST | `/api/v1/auth/senha/redefinir` | Consome token, troca hash Argon2, apaga sessões antigas, responde `200`. |
 | GET | `/api/v1/auth/google` | Redireciona para o Google com PKCE; sem credenciais em dev redireciona para o consentimento demo; sem credenciais em produção responde `503`. |
 | GET | `/api/v1/auth/google/callback` | Valida state, troca código, valida id_token, cria/vincula usuário, cria sessão e redireciona para `/`. |
-| GET | `/api/v1/auth/google/demo` | Tela de consentimento simulada, claramente rotulada como demo, apenas fora de produção. |
+| GET | `/api/v1/auth/google/demo` | Tela de consentimento simulada, claramente rotulada como demo, apenas fora de produção. Usa identidade fixa `demo.google@exemplo.local`, `sub` `google-demo-sub`, nome `Técnico Demo`. |
 | GET | `/api/v1/conta` | Dados não sensíveis: nome, e-mail, empresa, verificado, provedor, criação. |
 | PATCH | `/api/v1/conta` | Atualiza nome do usuário e da empresa. |
 | POST | `/api/v1/conta/senha` | Troca de senha: exige senha atual para conta com senha; para conta Google exige e-mail verificado. |
@@ -103,8 +103,8 @@ Todas as rotas novas de auth entram em `ROTAS_PUBLICAS` no middleware; `/api/v1/
 - PKCE S256 com `state` aleatório guardado em cookie HttpOnly; `SameSite=Lax` funciona porque o retorno do Google é um GET de topo.
 - Tokens de e-mail armazenados só como hash, de uso único, com expiração.
 - Respostas genéricas em esqueci/reenviar para não revelar existência de conta.
-- `id_token` validado por assinatura (JWKS), `aud` igual ao Client ID, `iss` do Google, `exp` e `email_verified`.
-- Vínculo da conta Google somente por e-mail verificado; conta existente com senha nunca tem a senha sobrescrita.
+- `id_token` validado por assinatura (JWKS), `aud` igual ao Client ID, `iss` do Google, `exp` e `email_verified`. O modo demo preserva state e PKCE, mas curto-circuita essa validação com perfil sintético — nunca em produção.
+- Vínculo da conta Google somente quando Google e a conta local attestam e-mail verificado; conta existente com senha nunca tem a senha sobrescrita e conta local não verificada nunca é vinculada ou marcada como verificada.
 - Redefinição de senha invalida todas as sessões do usuário.
 - Modo demo indisponível quando `NODE_ENV === 'production'`.
 - Nenhum segredo no cliente, em log ou em mensagem de erro.
@@ -119,6 +119,15 @@ Variáveis lidas no servidor: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGL
 - Rotas testadas com `criarBancoTeste()` + `setBancoAtivo()` (PGlite), sem rede.
 - Validação do `id_token` com JWKS mockado; demo testado ponta a ponta no browser.
 - Suíte final: `corepack pnpm test`, `corepack pnpm build`, auditoria 375/768/1280/1440 em claro/escuro nas telas novas, verificação de alvos ≥44 px e zero overflow.
+
+## Decisões do builder check
+
+Um revisor independente apontou quatro ambiguidades. Todas foram resolvidas aqui como decisões do builder, sem voltar ao usuário:
+
+1. **Conta local existente e não verificada:** não é vinculada ao Google, mesmo com `email_verified` do Google. A recusa orienta a entrar com senha, verificar o e-mail e tentar de novo. Fecha a janela de takeover por cadastro prévio sem posse da caixa de entrada.
+2. **Campo `retorno` do OAuth:** removido. O cookie guarda só `state` e `verifier`; o callback redireciona sempre para `/`. Elimina a classe de open redirect sem ganho funcional nesta entrega.
+3. **Nome da empresa no cadastro Google:** `"Minha empresa"` como padrão, com nome da pessoa em `usuarios.nome`. Ambos editáveis em `/conta`; nenhuma tela extra de onboarding.
+4. **Validação no modo demo:** state e PKCE são exercitados de verdade; a etapa de `id_token`/JWKS é substituída por perfil sintético fixo. O caminho real é coberto por testes com JWKS mockado. A identidade fixa permite testar colisões diretamente nas funções de domínio, sem tornar a demo configurável.
 
 ## O que fica para o builder
 
