@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 
 import AssinaturaCanvas from '@/components/AssinaturaCanvas'
+import { useToast } from '@/components/ToastProvider'
+import { useT } from '@/lib/i18n/useT'
 import { reduzirFoto } from '@/lib/offline/fotos'
 import { excedeLimite, TAMANHO_MAXIMO_MIDIA } from '@/lib/offline/imagem'
 import {
@@ -12,6 +14,7 @@ import {
   sincronizarFila,
 } from '@/lib/offline/queue'
 import { proximoRascunho, rascunhoVazio, type RascunhoVisita } from '@/lib/offline/rascunho'
+import { executarOtimista } from '@/lib/ui/acao-otimista'
 
 type Modelo = { id: string; nome: string }
 type FotoSelecionada = RascunhoVisita['fotos'][number]
@@ -21,14 +24,14 @@ type ResultadoSync = Awaited<ReturnType<typeof sincronizarFila>>
 const LIMITE_MB = Math.round(TAMANHO_MAXIMO_MIDIA / 1024 / 1024)
 
 export default function NovaVisitaPage() {
+  const t = useT()
+  const { avisar } = useToast()
   const [clientId, setClientId] = useState('')
   const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [rascunho, setRascunho] = useState<RascunhoVisita>(() => rascunhoVazio())
   const [modelos, setModelos] = useState<Modelo[]>([])
   const [erro, setErro] = useState<string | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
-  const [salvando, setSalvando] = useState(false)
-  const [sincronizando, setSincronizando] = useState(false)
   const [pendentes, setPendentes] = useState(0)
   const [entregas, setEntregas] = useState<Entrega[]>([])
   const [resultado, setResultado] = useState<ResultadoSync | null>(null)
@@ -57,54 +60,65 @@ export default function NovaVisitaPage() {
     try {
       const resposta = await fetch('/api/v1/sessao')
       if (!resposta.ok) {
-        setErro('Sua sessão expirou. Entre novamente para salvar e sincronizar visitas.')
+        setErro(t('visitaErroSessao'))
         return
       }
       const corpo = (await resposta.json()) as { empresaId: string }
       if (corpo.empresaId) {
         setEmpresaId(corpo.empresaId)
       } else {
-        setErro('Não foi possível identificar sua empresa. Recarregue a página.')
+        setErro(t('visitaErroEmpresa'))
       }
     } catch {
-      setErro('Não foi possível identificar sua empresa. Recarregue a página.')
+      setErro(t('visitaErroEmpresa'))
     }
-  }, [])
+  }, [t])
 
   const sincronizar = useCallback(async () => {
     if (!empresaId) {
       return
     }
-    setSincronizando(true)
     setErro(null)
     setMensagem(null)
-    try {
-      const obtido = await sincronizarFila(empresaId)
-      setResultado(obtido)
-      await atualizarEstado(empresaId)
-      if (obtido.enviadas > 0) {
-        setMensagem(`${obtido.enviadas} visita(s) enviada(s).`)
-      }
-      const avisos: string[] = []
-      if (obtido.errosTamanho > 0) {
-        avisos.push(
-          `${obtido.errosTamanho} visita(s) não couberam no envio (limite de ${LIMITE_MB} MB). Remova fotos e salve uma nova visita.`,
-        )
-      }
-      if (obtido.falhas > 0) {
-        avisos.push(
-          `${obtido.falhas} visita(s) ficaram pendentes por falha de conexão e serão reenviadas.`,
-        )
-      }
-      if (avisos.length > 0) {
-        setErro(avisos.join(' '))
-      }
-    } catch {
-      setErro('Não foi possível sincronizar. Tente novamente quando houver internet.')
-    } finally {
-      setSincronizando(false)
-    }
-  }, [empresaId, atualizarEstado])
+    avisar(t('visitaEnviando'), 'info')
+
+    await executarOtimista({
+      aplicar: () => pendentes,
+      executar: async () => {
+        const obtido = await sincronizarFila(empresaId)
+        setResultado(obtido)
+        await atualizarEstado(empresaId)
+        return obtido
+      },
+      desfazer: (anterior) => setPendentes(anterior),
+      aoSucesso: (valor) => {
+        const obtido = valor as ResultadoSync
+        if (obtido.enviadas > 0) {
+          const texto = t('visitaEnviadasToast', { n: obtido.enviadas })
+          setMensagem(texto)
+          avisar(texto)
+        }
+        const avisos: string[] = []
+        if (obtido.errosTamanho > 0) {
+          avisos.push(
+            t('visitaAvisoTamanho', { n: obtido.errosTamanho, limite: LIMITE_MB }),
+          )
+        }
+        if (obtido.falhas > 0) {
+          avisos.push(t('visitaAvisoFalhas', { n: obtido.falhas }))
+        }
+        if (avisos.length > 0) {
+          setErro(avisos.join(' '))
+          avisar(avisos.join(' '), 'erro')
+        }
+      },
+      aoErro: () => {
+        const texto = t('visitaErroSync')
+        setErro(texto)
+        avisar(texto, 'erro')
+      },
+    })
+  }, [empresaId, pendentes, atualizarEstado, avisar, t])
 
   useEffect(() => {
     // UUIDv4 gerado no navegador: chave de idempotência da visita (RF-08).
@@ -140,7 +154,7 @@ export default function NovaVisitaPage() {
       const reduzidas: FotoSelecionada[] = []
       for (const arquivo of arquivos) {
         if (!arquivo.type.startsWith('image/')) {
-          throw new Error(`"${arquivo.name}" não é uma imagem.`)
+          throw new Error(t('visitaErroImagem', { nome: arquivo.name }))
         }
         const capturadoEm = new Date()
         const blob = await reduzirFoto(arquivo)
@@ -148,7 +162,9 @@ export default function NovaVisitaPage() {
       }
       setRascunho((atual) => ({ ...atual, fotos: [...atual.fotos, ...reduzidas] }))
     } catch (falha) {
-      setErro(falha instanceof Error ? falha.message : 'Não foi possível processar as fotos.')
+      const texto = falha instanceof Error ? falha.message : t('visitaErroSalvar')
+      setErro(texto)
+      avisar(texto, 'erro')
     }
   }
 
@@ -158,87 +174,101 @@ export default function NovaVisitaPage() {
     setMensagem(null)
 
     if (!empresaId) {
-      setErro('Sua empresa ainda não foi identificada. Aguarde ou recarregue a página.')
+      setErro(t('visitaAguarde'))
       return
     }
 
     const id = clientId || crypto.randomUUID()
     const tipoFinal = tipo.trim() || modelos.find((modelo) => modelo.id === modeloId)?.nome.trim() || ''
     if (!cliente.trim()) {
-      setErro('Informe o nome do cliente.')
+      setErro(t('visitaErroCliente'))
       return
     }
     if (!tipoFinal) {
-      setErro('Informe o tipo de visita ou selecione um modelo.')
+      setErro(t('visitaErroTipo'))
       return
     }
     const tamanhos = [...fotos.map((foto) => foto.blob.size), ...(assinatura ? [assinatura.size] : [])]
     if (excedeLimite(tamanhos)) {
-      setErro(
-        `Fotos e assinatura passam de ${LIMITE_MB} MB. Remova imagens antes de salvar para não estourar o envio.`,
-      )
+      setErro(t('visitaErroTamanho', { limite: LIMITE_MB }))
       return
     }
 
-    setSalvando(true)
-    try {
-      await enfileirarVisita(
-        {
-          clientId: id,
-          modeloId: modeloId || undefined,
-          dados: {
-            cliente: cliente.trim(),
-            tipo: tipoFinal,
-            observacoes,
+    const rascunhoAnterior = rascunho
+    const clientIdAnterior = clientId
+    const pendentesAnteriores = pendentes
+
+    await executarOtimista({
+      aplicar: () => {
+        // Uma única transição atômica limpa TODOS os campos, inclusive a
+        // assinatura, e avança a chave: o canvas remonta em branco e notifica
+        // `null`, mantendo pai e componente sincronizados para a próxima visita.
+        setRascunho(proximoRascunho(assinaturaChave))
+        setClientId(crypto.randomUUID())
+        setPendentes((atual) => atual + 1)
+        setResultado(null)
+        avisar(t('visitaSalva'))
+      },
+      executar: async () => {
+        await enfileirarVisita(
+          {
+            clientId: id,
+            modeloId: modeloId || undefined,
+            dados: {
+              cliente: cliente.trim(),
+              tipo: tipoFinal,
+              observacoes,
+            },
+            capturadoEm: new Date(),
+            fotos: fotos.map(({ blob, capturadoEm }) => ({ blob, capturadoEm })),
+            assinatura: assinatura ?? undefined,
           },
-          capturadoEm: new Date(),
-          fotos: fotos.map(({ blob, capturadoEm }) => ({ blob, capturadoEm })),
-          assinatura: assinatura ?? undefined,
-        },
-        empresaId,
-      )
-      await atualizarEstado(empresaId)
-      setMensagem('Visita salva no aparelho. Envie quando houver internet para receber o link do laudo.')
-      // Uma única transição atômica limpa TODOS os campos, inclusive a
-      // assinatura, e avança a chave: o canvas remonta em branco e notifica
-      // `null`, mantendo pai e componente sincronizados para a próxima visita.
-      setRascunho(proximoRascunho(assinaturaChave))
-      setResultado(null)
-      setClientId(crypto.randomUUID())
-    } catch {
-      setErro('Não foi possível salvar a visita no aparelho.')
-    } finally {
-      setSalvando(false)
-    }
+          empresaId,
+        )
+        await atualizarEstado(empresaId)
+      },
+      desfazer: () => {
+        setRascunho(rascunhoAnterior)
+        setClientId(clientIdAnterior)
+        setPendentes(pendentesAnteriores)
+      },
+      aoErro: () => {
+        const texto = t('visitaErroSalvar')
+        setErro(texto)
+        avisar(texto, 'erro')
+      },
+    })
   }
 
   async function copiarLink(entrega: Entrega) {
-    const link = `${window.location.origin}/o/${entrega.token}`
-    try {
-      await navigator.clipboard.writeText(link)
-      setMensagem('Link do laudo copiado.')
-    } catch {
-      setErro('Não foi possível copiar. Selecione o link e copie manualmente.')
-    }
+    await executarOtimista({
+      aplicar: () => undefined,
+      executar: async () => {
+        await navigator.clipboard.writeText(`${window.location.origin}/o/${entrega.token}`)
+      },
+      aoSucesso: () => avisar(t('visitaCopiado')),
+      aoErro: () => {
+        const texto = 'Não foi possível copiar. Selecione o link e copie manualmente.'
+        setErro(texto)
+        avisar(texto, 'erro')
+      },
+    })
   }
 
   return (
     <main className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Nova visita técnica</h1>
-        <p className="text-sm text-slate-600">
-          O rascunho fica salvo neste aparelho até você sincronizar. Não é preciso internet para
-          preencher ou salvar.
-        </p>
+        <h1 className="text-2xl font-semibold">{t('visitaTitulo')}</h1>
+        <p className="text-sm text-slate-600">{t('visitaSubtitulo')}</p>
         <a href="/" className="text-sm text-teal-700 underline">
-          Voltar ao início
+          {t('voltarInicio')}
         </a>
       </header>
 
       <form onSubmit={salvar} className="space-y-5">
         <div className="space-y-1">
           <label htmlFor="cliente" className="block font-medium">
-            Cliente
+            {t('visitaCliente')}
           </label>
           <input
             id="cliente"
@@ -246,26 +276,26 @@ export default function NovaVisitaPage() {
             onChange={(event) => setRascunho((atual) => ({ ...atual, cliente: event.target.value }))}
             required
             className="w-full rounded border border-slate-300 px-3 py-2"
-            placeholder="Nome do cliente"
+            placeholder={t('visitaClientePlaceholder')}
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <label htmlFor="tipo" className="block font-medium">
-              Tipo de visita
+              {t('visitaTipo')}
             </label>
             <input
               id="tipo"
               value={tipo}
               onChange={(event) => setRascunho((atual) => ({ ...atual, tipo: event.target.value }))}
               className="w-full rounded border border-slate-300 px-3 py-2"
-              placeholder="Ex.: HVAC"
+              placeholder={t('visitaTipoPlaceholder')}
             />
           </div>
           <div className="space-y-1">
             <label htmlFor="modelo" className="block font-medium">
-              Modelo (opcional)
+              {t('visitaModelo')}
             </label>
             <select
               id="modelo"
@@ -273,22 +303,20 @@ export default function NovaVisitaPage() {
               onChange={(event) => setRascunho((atual) => ({ ...atual, modeloId: event.target.value }))}
               className="w-full rounded border border-slate-300 px-3 py-2"
             >
-              <option value="">Sem modelo</option>
+              <option value="">{t('visitaSemModelo')}</option>
               {modelos.map((modelo) => (
                 <option key={modelo.id} value={modelo.id}>
                   {modelo.nome}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-slate-500">
-              Se o tipo ficar vazio, usamos o nome do modelo selecionado.
-            </p>
+            <p className="text-xs text-slate-500">{t('visitaModeloDica')}</p>
           </div>
         </div>
 
         <div className="space-y-1">
           <label htmlFor="observacoes" className="block font-medium">
-            Observações
+            {t('visitaObservacoes')}
           </label>
           <textarea
             id="observacoes"
@@ -298,12 +326,14 @@ export default function NovaVisitaPage() {
             rows={4}
             className="w-full rounded border border-slate-300 px-3 py-2"
           />
-          <p className="text-xs text-slate-500">{observacoes.length}/2000 caracteres</p>
+          <p className="text-xs text-slate-500">
+            {observacoes.length}/2000 {t('visitaCaracteres')}
+          </p>
         </div>
 
         <div className="space-y-2">
           <label htmlFor="fotos" className="block font-medium">
-            Fotos (antes/depois)
+            {t('visitaFotos')}
           </label>
           <input
             id="fotos"
@@ -314,6 +344,7 @@ export default function NovaVisitaPage() {
             onChange={aoSelecionarFotos}
             className="block w-full text-sm"
           />
+          <p className="text-xs text-slate-500">{t('visitaFotosDica')}</p>
           {fotos.length > 0 && (
             <ul className="text-sm text-slate-600">
               {fotos.map((foto, indice) => (
@@ -341,16 +372,10 @@ export default function NovaVisitaPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={salvando || !empresaId}
-          className="rounded bg-teal-700 px-4 py-2 text-white disabled:opacity-50"
-        >
-          {salvando ? 'Salvando…' : 'Salvar visita no aparelho'}
+        <button type="submit" className="rounded bg-teal-700 px-4 py-2 text-white">
+          {t('visitaSalvar')}
         </button>
-        {!empresaId && (
-          <p className="text-xs text-slate-500">Aguarde a identificação da sessão para salvar.</p>
-        )}
+        {!empresaId && <p className="text-xs text-slate-500">{t('visitaAguarde')}</p>}
       </form>
 
       <section className="space-y-3 border-t border-slate-200 pt-4">
@@ -358,23 +383,26 @@ export default function NovaVisitaPage() {
           <button
             type="button"
             onClick={() => void sincronizar()}
-            disabled={sincronizando || !empresaId}
+            disabled={!empresaId}
             className="rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50"
           >
-            {sincronizando ? 'Enviando…' : 'Sincronizar agora'}
+            {t('visitaSincronizar')}
           </button>
-          <span className="text-sm text-slate-600">{pendentes} visita(s) pendente(s)</span>
+          <span className="text-sm text-slate-600">
+            {pendentes} {t('visitaPendentes')}
+          </span>
         </div>
         {resultado && (
           <p className="text-sm text-slate-600">
-            Último envio: {resultado.enviadas} enviada(s), {resultado.falhas} falha(s),{' '}
-            {resultado.errosTamanho} erro(s) de tamanho.
+            {t('visitaUltimoEnvio')}: {resultado.enviadas} {t('visitaEnviadas')},{' '}
+            {resultado.falhas} {t('visitaFalhas')}, {resultado.errosTamanho}{' '}
+            {t('visitaErrosTamanho')}.
           </p>
         )}
 
         {empresaId && entregas.length > 0 && (
           <div className="space-y-2">
-            <h2 className="font-medium">Links dos laudos entregues</h2>
+            <h2 className="font-medium">{t('visitaLinks')}</h2>
             <ul className="space-y-2">
               {entregas.map((entrega) => (
                 <li key={entrega.clientId} className="flex flex-wrap items-center gap-2 text-sm">
@@ -386,7 +414,7 @@ export default function NovaVisitaPage() {
                     onClick={() => void copiarLink(entrega)}
                     className="rounded border border-slate-300 px-2 py-1"
                   >
-                    Copiar link
+                    {t('visitaCopiar')}
                   </button>
                 </li>
               ))}

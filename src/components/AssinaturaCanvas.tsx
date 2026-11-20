@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 
+import { useToast } from '@/components/ToastProvider'
+import { useT } from '@/lib/i18n/useT'
+
 type AssinaturaCanvasProps = {
   /** Recebe o PNG desenhado; `null` quando a área é limpa. */
   onAssinatura: (blob: Blob | null) => void
@@ -17,6 +20,8 @@ const ALTURA = 400
  * PNG como Blob para que o chamador enfileire com a visita (caminho offline).
  */
 export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps) {
+  const t = useT()
+  const { avisar } = useToast()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const desenhando = useRef(false)
   const temTraco = useRef(false)
@@ -114,6 +119,7 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
         setCapturada(true)
         setErro(null)
         onAssinatura(blob)
+        avisar(t('visitaConfirmada'))
       },
       'image/png',
     )
@@ -121,12 +127,12 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
 
   return (
     <section className="space-y-2">
-      <p className="font-medium">Assinatura do cliente</p>
+      <p className="font-medium">{t('visitaAssinatura')}</p>
       <canvas
         ref={canvasRef}
         width={LARGURA}
         height={ALTURA}
-        aria-label="Área para assinatura do cliente"
+        aria-label={t('visitaAssinatura')}
         onPointerDown={iniciarTraco}
         onPointerMove={continuarTraco}
         onPointerUp={finalizarTraco}
@@ -153,7 +159,7 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
           onClick={limpar}
           className="rounded border border-slate-300 px-3 py-2"
         >
-          Limpar
+          {t('visitaLimpar')}
         </button>
         <button
           type="button"
@@ -161,9 +167,9 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
           disabled={!podeConfirmar}
           className="rounded bg-teal-700 px-3 py-2 text-white disabled:opacity-50"
         >
-          Confirmar assinatura
+          {t('visitaConfirmar')}
         </button>
-        {capturada && <span className="self-center text-sm text-teal-800">Assinatura capturada.</span>}
+        {capturada && <span className="self-center text-sm text-teal-800">{t('visitaConfirmada')}</span>}
       </div>
     </section>
   )

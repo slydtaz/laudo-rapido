@@ -3,50 +3,60 @@
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 
+import { useToast } from '@/components/ToastProvider'
+import { useT } from '@/lib/i18n/useT'
+import { executarOtimista } from '@/lib/ui/acao-otimista'
+
 export default function PaginaLogin() {
   const router = useRouter()
+  const t = useT()
+  const { avisar } = useToast()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
-  const [enviando, setEnviando] = useState(false)
 
   async function entrar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
-    setErro('')
-    setEnviando(true)
-    try {
-      const resposta = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha }),
-      })
-      if (!resposta.ok) {
-        const corpo = (await resposta.json().catch(() => ({}))) as {
-          erro?: string
+    avisar(t('carregando'), 'info')
+
+    await executarOtimista({
+      aplicar: () => {
+        setErro('')
+        return erro
+      },
+      executar: async () => {
+        const resposta = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha }),
+        })
+        if (!resposta.ok) {
+          const corpo = (await resposta.json().catch(() => ({}))) as { erro?: string }
+          throw new Error(corpo.erro ?? t('loginErroCredenciais'))
         }
-        setErro(corpo.erro ?? 'Não foi possível entrar.')
-        return
-      }
-      router.push('/')
-      router.refresh()
-    } catch {
-      setErro('Não foi possível conectar ao servidor.')
-    } finally {
-      setEnviando(false)
-    }
+      },
+      desfazer: (erroAnterior) => setErro(erroAnterior),
+      aoSucesso: () => {
+        router.push('/')
+        router.refresh()
+      },
+      aoErro: (falha) => {
+        const mensagem = falha instanceof Error ? falha.message : t('loginErroServidor')
+        setErro(mensagem)
+        avisar(mensagem, 'erro')
+      },
+    })
   }
 
   return (
     <main>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Entrar no LaudoRápido</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Use seu e-mail e senha de técnico para registrar visitas.
-        </p>
+        <h1 className="text-2xl font-semibold">{t('loginTitulo')}</h1>
+        <p className="mt-1 text-sm text-slate-600">{t('loginSubtitulo')}</p>
 
         <form onSubmit={entrar} className="mt-6 space-y-4">
           <label className="block text-sm font-medium">
-            E-mail
+            {t('loginEmail')}
             <input
               type="email"
               value={email}
@@ -58,7 +68,7 @@ export default function PaginaLogin() {
           </label>
 
           <label className="block text-sm font-medium">
-            Senha
+            {t('loginSenha')}
             <input
               type="password"
               value={senha}
@@ -73,10 +83,9 @@ export default function PaginaLogin() {
 
           <button
             type="submit"
-            disabled={enviando}
-            className="w-full rounded-md bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-50"
+            className="w-full rounded-md bg-slate-900 px-4 py-2 font-medium text-white"
           >
-            {enviando ? 'Entrando...' : 'Entrar'}
+            {t('loginBotao')}
           </button>
         </form>
       </div>
