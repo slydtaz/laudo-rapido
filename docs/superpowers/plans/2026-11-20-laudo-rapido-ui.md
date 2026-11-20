@@ -1,6 +1,6 @@
 # LaudoRápido UI Premium Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (execution method chosen by the human partner). Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (execution method chosen by the human partner). Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Entregar a reforma visual completa com tema, idiomas, skeletons, 404, botões otimistas, configurações e planos, verificada por testes, build e screenshots.
 
@@ -43,12 +43,12 @@
 **Interfaces:**
 - Produces: `type Preferencias`, `PREFERENCIAS_PADRAO`, `lerPreferencias()`, `salvarPreferencias()`, `usePreferencias()` com `{ preferencias, atualizar }`.
 
-- [ ] **Step 1: Escrever teste de leitura de preferências com localStorage vazio e corrompido**
-- [ ] **Step 2: Rodar o teste e confirmar falha**
-- [ ] **Step 3: Implementar `PREFERENCIAS_PADRAO`, `lerPreferencias` e `salvarPreferencias` com chave versionada e validação**
-- [ ] **Step 4: Definir tokens CSS claros/escuros, fontes Sora + DM Sans, estados de foco e utilitários de movimento em `globals.css`**
-- [ ] **Step 5: Aplicar `data-theme`, `data-motion` e `data-texto` no `<html>` via script inline em `layout.tsx`; montar `ProvedorPreferencias`**
-- [ ] **Step 6: Rodar teste, build e commit**
+- [x] **Step 1: Escrever teste de leitura de preferências com localStorage vazio e corrompido**
+- [x] **Step 2: Rodar o teste e confirmar falha**
+- [x] **Step 3: Implementar `PREFERENCIAS_PADRAO`, `lerPreferencias` e `salvarPreferencias` com chave versionada e validação**
+- [x] **Step 4: Definir tokens CSS claros/escuros, fontes Sora + DM Sans, estados de foco e utilitários de movimento em `globals.css`**
+- [x] **Step 5: Aplicar `data-theme`, `data-motion` e `data-texto` no `<html>` via script inline em `layout.tsx`; montar `ProvedorPreferencias`**
+- [x] **Step 6: Rodar teste, build e commit**
 
 ### Task 2: Dicionário de cinco idiomas
 
@@ -61,11 +61,11 @@
 **Interfaces:**
 - Produces: `useT(): (chave: ChaveTexto) => string`, `IDIOMAS`, `type ChaveTexto`.
 
-- [ ] **Step 1: Testar que os cinco idiomas têm exatamente as mesmas chaves e que PT-BR contém os textos atuais dos botões**
-- [ ] **Step 2: Rodar o teste e confirmar falha**
-- [ ] **Step 3: Criar o dicionário tipado com ptBR, en, es, fr, de**
-- [ ] **Step 4: Criar `useT` e expor o idioma pelo provedor, atualizando `document.documentElement.lang`**
-- [ ] **Step 5: Rodar teste e commit**
+- [x] **Step 1: Testar que os cinco idiomas têm exatamente as mesmas chaves e que PT-BR contém os textos atuais dos botões**
+- [x] **Step 2: Rodar o teste e confirmar falha**
+- [x] **Step 3: Criar o dicionário tipado com ptBR, en, es, fr, de**
+- [x] **Step 4: Criar `useT` e expor o idioma pelo provedor, atualizando `document.documentElement.lang`**
+- [x] **Step 5: Rodar teste e commit**
 
 ### Task 3: Skeleton, toast e 404
 
@@ -79,12 +79,12 @@
 **Interfaces:**
 - Produces: `<Skeleton linhas?: number />`, `useToast(): { avisar(mensagem, tipo?) }`.
 
-- [ ] **Step 1: Testar que Skeleton expõe `aria-busy` e que toast anuncia em `aria-live`**
-- [ ] **Step 2: Rodar o teste e confirmar falha**
-- [ ] **Step 3: Implementar Skeleton com altura fixa e shimmer**
-- [ ] **Step 4: Implementar ToastProvider com animação de entrada e saída**
-- [ ] **Step 5: Criar 404 personalizada e skeleton da rota pública**
-- [ ] **Step 6: Rodar teste e commit**
+- [x] **Step 1: Testar que Skeleton expõe `aria-busy` e que toast anuncia em `aria-live`**
+- [x] **Step 2: Rodar o teste e confirmar falha**
+- [x] **Step 3: Implementar Skeleton com altura fixa e shimmer**
+- [x] **Step 4: Implementar ToastProvider com animação de entrada e saída**
+- [x] **Step 5: Criar 404 personalizada e skeleton da rota pública**
+- [x] **Step 6: Rodar teste e commit**
 
 ### Task 4: Ações otimistas em login e captura
 
@@ -94,10 +94,10 @@
 - Modify: `src/components/AssinaturaCanvas.tsx`
 - Test: `tests/acoes-otimistas.test.tsx`
 
-- [ ] **Step 1: Testar que o clique limpa o form na hora e que falha restaura o rascunho**
-- [ ] **Step 2: Rodar o teste e confirmar falha**
-- [ ] **Step 3: Aplicar confirmação otimista em salvar, sincronizar, copiar link e confirmar assinatura, com toast e rollback**
-- [ ] **Step 4: Rodar teste e commit**
+- [x] **Step 1: Testar que o clique limpa o form na hora e que falha restaura o rascunho**
+- [x] **Step 2: Rodar o teste e confirmar falha**
+- [x] **Step 3: Aplicar confirmação otimista em salvar, sincronizar, copiar link e confirmar assinatura, com toast e rollback**
+- [x] **Step 4: Rodar teste e commit**
 
 ### Task 5: Telas de início, login e captura
 
@@ -108,11 +108,11 @@
 - Modify: `src/components/AssinaturaCanvas.tsx`
 - Test: `tests/ui-screens.test.tsx`
 
-- [ ] **Step 1: Testar acessibilidade básica das telas: rótulos, contraste de tokens e foco visível**
-- [ ] **Step 2: Rodar o teste e confirmar falha**
-- [ ] **Step 3: Aplicar hierarquia visual, cards, chips de foto, painel de status e micro-interações**
-- [ ] **Step 4: Rodar teste e capturar screenshots em 375/768/1280/1440, claro e escuro**
-- [ ] **Step 5: Corrigir defeitos encontrados e commit**
+- [x] **Step 1: Testar acessibilidade básica das telas: rótulos, contraste de tokens e foco visível**
+- [x] **Step 2: Rodar o teste e confirmar falha**
+- [x] **Step 3: Aplicar hierarquia visual, cards, chips de foto, painel de status e micro-interações**
+- [x] **Step 4: Rodar teste e capturar screenshots em 375/768/1280/1440, claro e escuro**
+- [x] **Step 5: Corrigir defeitos encontrados e commit**
 
 ### Task 6: Configurações e planos
 
@@ -121,11 +121,11 @@
 - Create: `src/app/planos/page.tsx`
 - Test: `tests/configuracoes-planos.test.tsx`
 
-- [ ] **Step 1: Testar que as preferências alteradas persistem e que a página de planos não contém formulário de pagamento**
-- [ ] **Step 2: Rodar o teste e confirmar falha**
-- [ ] **Step 3: Implementar Configurações com tema, idioma, movimento, auto-sync e tamanho de texto**
-- [ ] **Step 4: Implementar Planos com três tiers, FAQ e CTA**
-- [ ] **Step 5: Rodar teste e commit**
+- [x] **Step 1: Testar que as preferências alteradas persistem e que a página de planos não contém formulário de pagamento**
+- [x] **Step 2: Rodar o teste e confirmar falha**
+- [x] **Step 3: Implementar Configurações com tema, idioma, movimento, auto-sync e tamanho de texto**
+- [x] **Step 4: Implementar Planos com três tiers, FAQ e CTA**
+- [x] **Step 5: Rodar teste e commit**
 
 ### Task 7: Auditoria final e limpeza de texto
 
@@ -133,7 +133,7 @@
 - Todos os arquivos de UI e `docs/superpowers/specs/2026-11-20-laudo-rapido-ui-design.md`
 - Test: `corepack pnpm test`, `corepack pnpm build`
 
-- [ ] **Step 1: Revisar todo o texto com a skill unslop, removendo "(s)", redundâncias e frases vazias**
-- [ ] **Step 2: Rodar testes e build completos**
-- [ ] **Step 3: Validar no browser: troca de idioma, tema, 404, skeleton, clique otimista, planos e configurações**
-- [ ] **Step 4: Conferir `git status` e commit final**
+- [x] **Step 1: Revisar todo o texto com a skill unslop, removendo "(s)", redundâncias e frases vazias**
+- [x] **Step 2: Rodar testes e build completos**
+- [x] **Step 3: Validar no browser: troca de idioma, tema, 404, skeleton, clique otimista, planos e configurações**
+- [x] **Step 4: Conferir `git status` e commit final**

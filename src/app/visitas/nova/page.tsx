@@ -247,7 +247,7 @@ export default function NovaVisitaPage() {
       },
       aoSucesso: () => avisar(t('visitaCopiado')),
       aoErro: () => {
-        const texto = 'Não foi possível copiar. Selecione o link e copie manualmente.'
+        const texto = t('visitaErroCopiar')
         setErro(texto)
         avisar(texto, 'erro')
       },
@@ -395,7 +395,7 @@ export default function NovaVisitaPage() {
           <div>
             <h2>{t('autoSync')}</h2>
             <p className="mt-1 text-sm text-muted">
-              {pendentes} {t('visitaPendentes')}
+              {t('visitaPendentes', { n: pendentes })}
             </p>
           </div>
           <button
@@ -410,9 +410,11 @@ export default function NovaVisitaPage() {
 
         {resultado && (
           <p className="rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted">
-            {t('visitaUltimoEnvio')}: {resultado.enviadas} {t('visitaEnviadas')},{' '}
-            {resultado.falhas} {t('visitaFalhas')}, {resultado.errosTamanho}{' '}
-            {t('visitaErrosTamanho')}.
+            {t('visitaUltimoEnvio', {
+              enviadas: resultado.enviadas,
+              falhas: resultado.falhas,
+              tamanho: resultado.errosTamanho,
+            })}
           </p>
         )}
 

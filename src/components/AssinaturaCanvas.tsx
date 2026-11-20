@@ -113,7 +113,7 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          setErro('Não foi possível capturar a assinatura. Tente novamente.')
+          setErro(t('visitaErroAssinatura'))
           return
         }
         setCapturada(true)

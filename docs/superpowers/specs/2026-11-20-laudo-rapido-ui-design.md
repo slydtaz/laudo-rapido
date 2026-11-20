@@ -41,13 +41,14 @@ Transformar as quatro telas atuais em uma interface limpa, enxuta e premium, com
 ## Decisões de implementação
 
 - Paleta: azul-marinho e teal profundo com acento âmbar; superfícies neutras levemente frias. Tema escuro com superfícies elevadas por luminosidade, não por inversão.
-- Fontes: Sora para títulos e DM Sans para texto, via `next/font/google` (self-hosted pelo Next). Sem Inter, Roboto ou system-ui.
+- Fontes: Sora para títulos e DM Sans para texto, versionadas em `src/fonts` e carregadas com `next/font/local`. Sem Inter, Roboto ou system-ui.
 - Tema aplicado por `data-theme` no `<html>`, com script inline antes da pintura para evitar flash.
 - I18n: dicionário tipado com chaves estáveis; `useT()` lê do provedor; `document.documentElement.lang` acompanha o idioma.
 - Skeleton: bloco com shimmer e `aria-busy="true"`, altura reservada para evitar salto de layout.
 - Ações otimistas: estado local muda no clique, toast confirma o resultado; falha restaura o estado anterior e mostra erro.
 - Configurações persistidas em `localStorage` com uma única chave versionada.
 - Planos: Gratuito, Pro e Empresas, com FAQ e CTA que leva ao login. Preços apresentados como referência, sem cobrança.
+- Textos: contagens usam frases com interpolação (`Visitas na fila: {n}`), sem `(s)`, redundâncias ou “Carregando…” dentro de botões.
 
 ## Fora do escopo
 
