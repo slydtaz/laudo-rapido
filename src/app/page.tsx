@@ -54,7 +54,7 @@ export default function HomePage() {
 
       <section className="space-y-3">
         <h2 className="reveal-2 text-sm font-medium text-muted">{t('homeMaisTarde')}</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link href="/configuracoes" className="card card-lift reveal-3 block p-6">
             <span
               aria-hidden="true"
@@ -64,6 +64,16 @@ export default function HomePage() {
             </span>
             <h3>{t('configuracoes')}</h3>
             <p className="mt-1 text-sm text-muted">{t('configSubtitulo')}</p>
+          </Link>
+          <Link href="/visitas" className="card card-lift reveal-3 block p-6">
+            <span
+              aria-hidden="true"
+              className="mb-4 grid size-10 place-items-center rounded-lg bg-success-soft text-lg text-success"
+            >
+              ◷
+            </span>
+            <h3>{t('historicoHome')}</h3>
+            <p className="mt-1 text-sm text-muted">{t('historicoHomeDica')}</p>
           </Link>
           <Link href="/planos" className="card card-lift reveal-4 block p-6">
             <span
