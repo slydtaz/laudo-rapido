@@ -27,6 +27,9 @@ export const usuarios = pgTable('usuarios', {
     .references(() => empresas.id),
   email: text('email').notNull().unique(),
   senhaHash: text('senha_hash'),
+  nome: text('nome'),
+  googleSub: text('google_sub').unique(),
+  emailVerificadoEm: timestamp('email_verificado_em', { mode: 'date' }),
   criadoEm: timestamp('criado_em', { mode: 'date' }).defaultNow(),
 })
 
@@ -94,6 +97,18 @@ export const sessoes = pgTable('sessoes', {
   criadoEm: timestamp('criado_em', { mode: 'date' }).defaultNow(),
 })
 
+/** Tokens de e-mail: só o hash é persistido e cada um é usado uma vez. */
+export const tokensAuth = pgTable('tokens_auth', {
+  id: text('id').primaryKey(),
+  usuarioId: uuid('usuario_id')
+    .notNull()
+    .references(() => usuarios.id, { onDelete: 'cascade' }),
+  tipo: text('tipo', { enum: ['verificar_email', 'redefinir_senha'] }).notNull(),
+  expiraEm: timestamp('expira_em', { mode: 'date' }).notNull(),
+  usadoEm: timestamp('usado_em', { mode: 'date' }),
+  criadoEm: timestamp('criado_em', { mode: 'date' }).defaultNow(),
+})
+
 export type Empresa = typeof empresas.$inferSelect
 export type Usuario = typeof usuarios.$inferSelect
 export type ModeloVisita = typeof modelosVisita.$inferSelect
@@ -101,3 +116,4 @@ export type Visita = typeof visitas.$inferSelect
 export type Foto = typeof fotos.$inferSelect
 export type Assinatura = typeof assinaturas.$inferSelect
 export type SessaoRegistro = typeof sessoes.$inferSelect
+export type TokenAuth = typeof tokensAuth.$inferSelect
