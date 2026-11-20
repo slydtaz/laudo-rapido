@@ -126,50 +126,50 @@ export default function AssinaturaCanvas({ onAssinatura }: AssinaturaCanvasProps
   }
 
   return (
-    <section className="space-y-2">
-      <p className="font-medium">{t('visitaAssinatura')}</p>
-      <canvas
-        ref={canvasRef}
-        width={LARGURA}
-        height={ALTURA}
-        aria-label={t('visitaAssinatura')}
-        onPointerDown={iniciarTraco}
-        onPointerMove={continuarTraco}
-        onPointerUp={finalizarTraco}
-        onPointerCancel={finalizarTraco}
-        onLostPointerCapture={finalizarTraco}
-        style={{
-          width: '100%',
-          height: 'auto',
-          background: '#ffffff',
-          border: '1px solid #d1d5db',
-          borderRadius: 8,
-          cursor: 'crosshair',
-          touchAction: 'none',
-        }}
-      />
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-medium">{t('visitaAssinatura')}</p>
+        <p className="text-xs leading-relaxed text-muted">{t('visitaAssinaturaDica')}</p>
+      </div>
+      <div
+        className="overflow-hidden rounded-xl border border-line bg-surface transition-colors focus-within:border-brand"
+        style={{ boxShadow: 'var(--shadow)' }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={LARGURA}
+          height={ALTURA}
+          aria-label={t('visitaAssinatura')}
+          onPointerDown={iniciarTraco}
+          onPointerMove={continuarTraco}
+          onPointerUp={finalizarTraco}
+          onPointerCancel={finalizarTraco}
+          onLostPointerCapture={finalizarTraco}
+          className="block h-auto w-full cursor-crosshair touch-none"
+        />
+      </div>
       {erro && (
-        <p role="alert" className="text-red-700">
+        <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
           {erro}
         </p>
       )}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={limpar}
-          className="rounded border border-slate-300 px-3 py-2"
-        >
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={limpar} className="btn btn-ghost">
           {t('visitaLimpar')}
         </button>
         <button
           type="button"
           onClick={confirmar}
           disabled={!podeConfirmar}
-          className="rounded bg-teal-700 px-3 py-2 text-white disabled:opacity-50"
+          className="btn btn-primary"
         >
           {t('visitaConfirmar')}
         </button>
-        {capturada && <span className="self-center text-sm text-teal-800">{t('visitaConfirmada')}</span>}
+        {capturada && (
+          <span className="chip chip-ok pop" role="status">
+            ✓ {t('visitaConfirmada')}
+          </span>
+        )}
       </div>
     </section>
   )

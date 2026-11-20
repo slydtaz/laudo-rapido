@@ -57,7 +57,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${sora.variable} ${dmSans.variable}`}>
+    // O script abaixo ajusta os atributos antes da pintura; o React não deve
+    // reclamar da diferença entre o HTML do servidor e o estado inicial.
+    <html lang="pt-BR" suppressHydrationWarning className={`${sora.variable} ${dmSans.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_PREFERENCIAS }} />
       </head>

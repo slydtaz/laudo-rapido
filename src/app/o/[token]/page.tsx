@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import EntregaPublica from '@/components/EntregaPublica'
 import { gerarPdf } from '@/lib/pdf/laudo'
 import { buscarVisitaPublica } from '@/lib/visita/publico'
 
@@ -20,17 +21,8 @@ export default async function PaginaEntrega({
 
   const bytes = await gerarPdf({ ...visita, nomePrestador: visita.nomePrestador ?? undefined })
   const pdf = `data:application/pdf;base64,${Buffer.from(bytes).toString('base64')}`
+  const nomeArquivo = `laudo-${visita.token ?? visita.id}.pdf`
+  const cliente = String(visita.dados.cliente ?? '')
 
-  return (
-    <main>
-      <h1>Relatório de Visita</h1>
-      <p>Laudo de {String(visita.dados.cliente ?? 'cliente não informado')}.</p>
-      <iframe src={pdf} title="Laudo de visita" width="100%" height="800" />
-      <p>
-        <a href={pdf} download={`laudo-${visita.token ?? visita.id}.pdf`}>
-          Baixar PDF
-        </a>
-      </p>
-    </main>
-  )
+  return <EntregaPublica cliente={cliente} pdf={pdf} nomeArquivo={nomeArquivo} />
 }

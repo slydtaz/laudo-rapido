@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 
 import AssinaturaCanvas from '@/components/AssinaturaCanvas'
@@ -100,9 +101,7 @@ export default function NovaVisitaPage() {
         }
         const avisos: string[] = []
         if (obtido.errosTamanho > 0) {
-          avisos.push(
-            t('visitaAvisoTamanho', { n: obtido.errosTamanho, limite: LIMITE_MB }),
-          )
+          avisos.push(t('visitaAvisoTamanho', { n: obtido.errosTamanho, limite: LIMITE_MB }))
         }
         if (obtido.falhas > 0) {
           avisos.push(t('visitaAvisoFalhas', { n: obtido.falhas }))
@@ -257,51 +256,55 @@ export default function NovaVisitaPage() {
 
   return (
     <main className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t('visitaTitulo')}</h1>
-        <p className="text-sm text-slate-600">{t('visitaSubtitulo')}</p>
-        <a href="/" className="text-sm text-teal-700 underline">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="eyebrow">{t('homeEyebrow')}</p>
+          <h1>{t('visitaTitulo')}</h1>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted">{t('visitaSubtitulo')}</p>
+        </div>
+        <Link href="/" className="btn btn-ghost">
           {t('voltarInicio')}
-        </a>
+        </Link>
       </header>
 
-      <form onSubmit={salvar} className="space-y-5">
-        <div className="space-y-1">
-          <label htmlFor="cliente" className="block font-medium">
-            {t('visitaCliente')}
-          </label>
-          <input
-            id="cliente"
-            value={cliente}
-            onChange={(event) => setRascunho((atual) => ({ ...atual, cliente: event.target.value }))}
-            required
-            className="w-full rounded border border-slate-300 px-3 py-2"
-            placeholder={t('visitaClientePlaceholder')}
-          />
-        </div>
+      <form onSubmit={salvar} className="card space-y-6 p-5 sm:p-8">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label htmlFor="cliente" className="label">
+              {t('visitaCliente')}
+            </label>
+            <input
+              id="cliente"
+              value={cliente}
+              onChange={(event) => setRascunho((atual) => ({ ...atual, cliente: event.target.value }))}
+              required
+              className="input"
+              placeholder={t('visitaClientePlaceholder')}
+            />
+          </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label htmlFor="tipo" className="block font-medium">
+          <div>
+            <label htmlFor="tipo" className="label">
               {t('visitaTipo')}
             </label>
             <input
               id="tipo"
               value={tipo}
               onChange={(event) => setRascunho((atual) => ({ ...atual, tipo: event.target.value }))}
-              className="w-full rounded border border-slate-300 px-3 py-2"
+              className="input"
               placeholder={t('visitaTipoPlaceholder')}
             />
           </div>
-          <div className="space-y-1">
-            <label htmlFor="modelo" className="block font-medium">
+
+          <div>
+            <label htmlFor="modelo" className="label">
               {t('visitaModelo')}
             </label>
             <select
               id="modelo"
               value={modeloId}
               onChange={(event) => setRascunho((atual) => ({ ...atual, modeloId: event.target.value }))}
-              className="w-full rounded border border-slate-300 px-3 py-2"
+              className="select"
             >
               <option value="">{t('visitaSemModelo')}</option>
               {modelos.map((modelo) => (
@@ -310,51 +313,58 @@ export default function NovaVisitaPage() {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-slate-500">{t('visitaModeloDica')}</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted">{t('visitaModeloDica')}</p>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="observacoes" className="label">
+              {t('visitaObservacoes')}
+            </label>
+            <textarea
+              id="observacoes"
+              value={observacoes}
+              onChange={(event) => setRascunho((atual) => ({ ...atual, observacoes: event.target.value }))}
+              maxLength={2000}
+              rows={4}
+              className="textarea"
+            />
+            <p className="mt-2 text-xs text-muted">
+              {observacoes.length}/2000 {t('visitaCaracteres')}
+            </p>
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="observacoes" className="block font-medium">
-            {t('visitaObservacoes')}
-          </label>
-          <textarea
-            id="observacoes"
-            value={observacoes}
-            onChange={(event) => setRascunho((atual) => ({ ...atual, observacoes: event.target.value }))}
-            maxLength={2000}
-            rows={4}
-            className="w-full rounded border border-slate-300 px-3 py-2"
-          />
-          <p className="text-xs text-slate-500">
-            {observacoes.length}/2000 {t('visitaCaracteres')}
-          </p>
-        </div>
+        <div className="divider" />
 
-        <div className="space-y-2">
-          <label htmlFor="fotos" className="block font-medium">
+        <div className="space-y-3">
+          <label htmlFor="fotos" className="label">
             {t('visitaFotos')}
           </label>
-          <input
-            id="fotos"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            onChange={aoSelecionarFotos}
-            className="block w-full text-sm"
-          />
-          <p className="text-xs text-slate-500">{t('visitaFotosDica')}</p>
+          <div className="rounded-xl border border-dashed border-line bg-surface-2 px-4 py-5">
+            <input
+              id="fotos"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              onChange={aoSelecionarFotos}
+              className="block min-h-11 w-full py-2 text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-brand"
+            />
+          </div>
+          <p className="text-xs leading-relaxed text-muted">{t('visitaFotosDica')}</p>
           {fotos.length > 0 && (
-            <ul className="text-sm text-slate-600">
+            <ul className="flex flex-wrap gap-2">
               {fotos.map((foto, indice) => (
-                <li key={`${foto.nome}-${indice}`}>
-                  {foto.nome} — {(foto.blob.size / 1024).toFixed(0)} KB
+                <li key={`${foto.nome}-${indice}`} className="chip chip-brand max-w-full">
+                  <span className="truncate">{foto.nome}</span>
+                  <span className="opacity-70">{(foto.blob.size / 1024).toFixed(0)} KB</span>
                 </li>
               ))}
             </ul>
           )}
         </div>
+
+        <div className="divider" />
 
         <AssinaturaCanvas
           key={assinaturaChave}
@@ -362,38 +372,44 @@ export default function NovaVisitaPage() {
         />
 
         {erro && (
-          <p role="alert" className="rounded bg-red-50 p-3 text-red-700">
+          <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
             {erro}
           </p>
         )}
         {mensagem && (
-          <p role="status" className="rounded bg-teal-50 p-3 text-teal-800">
+          <p role="status" className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success">
             {mensagem}
           </p>
         )}
 
-        <button type="submit" className="rounded bg-teal-700 px-4 py-2 text-white">
-          {t('visitaSalvar')}
-        </button>
-        {!empresaId && <p className="text-xs text-slate-500">{t('visitaAguarde')}</p>}
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" className="btn btn-primary">
+            {t('visitaSalvar')}
+          </button>
+          {!empresaId && <p className="text-xs text-muted">{t('visitaAguarde')}</p>}
+        </div>
       </form>
 
-      <section className="space-y-3 border-t border-slate-200 pt-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <section className="card space-y-4 p-5 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2>{t('autoSync')}</h2>
+            <p className="mt-1 text-sm text-muted">
+              {pendentes} {t('visitaPendentes')}
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => void sincronizar()}
             disabled={!empresaId}
-            className="rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50"
+            className="btn btn-soft"
           >
             {t('visitaSincronizar')}
           </button>
-          <span className="text-sm text-slate-600">
-            {pendentes} {t('visitaPendentes')}
-          </span>
         </div>
+
         {resultado && (
-          <p className="text-sm text-slate-600">
+          <p className="rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted">
             {t('visitaUltimoEnvio')}: {resultado.enviadas} {t('visitaEnviadas')},{' '}
             {resultado.falhas} {t('visitaFalhas')}, {resultado.errosTamanho}{' '}
             {t('visitaErrosTamanho')}.
@@ -401,19 +417,19 @@ export default function NovaVisitaPage() {
         )}
 
         {empresaId && entregas.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="font-medium">{t('visitaLinks')}</h2>
+          <div className="space-y-3">
+            <div className="divider" />
+            <h3>{t('visitaLinks')}</h3>
             <ul className="space-y-2">
               {entregas.map((entrega) => (
-                <li key={entrega.clientId} className="flex flex-wrap items-center gap-2 text-sm">
-                  <a href={`/o/${entrega.token}`} className="text-teal-700 underline">
+                <li
+                  key={entrega.clientId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3 text-sm"
+                >
+                  <a href={`/o/${entrega.token}`} className="link truncate">
                     /o/{entrega.token}
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => void copiarLink(entrega)}
-                    className="rounded border border-slate-300 px-2 py-1"
-                  >
+                  <button type="button" onClick={() => void copiarLink(entrega)} className="btn btn-ghost">
                     {t('visitaCopiar')}
                   </button>
                 </li>

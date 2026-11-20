@@ -11,6 +11,7 @@ export const ptBR = {
   autoSync: 'Envio automático',
   tamanhoTexto: 'Tamanho do texto',
 
+  homeEyebrow: 'Visita técnica',
   homeTitulo: 'LaudoRápido',
   homeSubtitulo: 'Laudos de visita técnica direto do campo, mesmo sem internet.',
   homeAcao: 'Registrar nova visita',
@@ -134,6 +135,7 @@ const en: DicionarioTextos = {
   autoSync: 'Auto upload',
   tamanhoTexto: 'Text size',
 
+  homeEyebrow: 'Field service',
   homeTitulo: 'LaudoRápido',
   homeSubtitulo: 'Field service reports, even without internet.',
   homeAcao: 'Register a new visit',
@@ -254,6 +256,7 @@ const es: DicionarioTextos = {
   autoSync: 'Envío automático',
   tamanhoTexto: 'Tamaño del texto',
 
+  homeEyebrow: 'Visita técnica',
   homeTitulo: 'LaudoRápido',
   homeSubtitulo: 'Informes de visita técnica desde el campo, incluso sin internet.',
   homeAcao: 'Registrar una nueva visita',
@@ -374,6 +377,7 @@ const fr: DicionarioTextos = {
   autoSync: 'Envoi automatique',
   tamanhoTexto: 'Taille du texte',
 
+  homeEyebrow: 'Intervention terrain',
   homeTitulo: 'LaudoRápido',
   homeSubtitulo: 'Des rapports de visite technique sur le terrain, même sans internet.',
   homeAcao: 'Enregistrer une nouvelle visite',
@@ -494,6 +498,7 @@ const de: DicionarioTextos = {
   autoSync: 'Automatisches Senden',
   tamanhoTexto: 'Schriftgröße',
 
+  homeEyebrow: 'Außendienst',
   homeTitulo: 'LaudoRápido',
   homeSubtitulo: 'Technische Besuchsberichte direkt vom Feld – auch ohne Internet.',
   homeAcao: 'Neuen Besuch erfassen',
