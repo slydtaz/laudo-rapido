@@ -32,12 +32,15 @@ export default function ProvedorPreferencias({ children }: { children: ReactNode
 
   useEffect(() => {
     setPreferencias(lerPreferencias())
-    const consulta = window.matchMedia('(prefers-color-scheme: dark)')
-    setPrefereEscuro(consulta.matches)
+    const consulta =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-color-scheme: dark)')
+        : null
+    setPrefereEscuro(consulta?.matches ?? false)
     const aoMudar = (evento: MediaQueryListEvent) => setPrefereEscuro(evento.matches)
-    consulta.addEventListener('change', aoMudar)
+    consulta?.addEventListener('change', aoMudar)
     setCarregado(true)
-    return () => consulta.removeEventListener('change', aoMudar)
+    return () => consulta?.removeEventListener('change', aoMudar)
   }, [])
 
   useEffect(() => {
