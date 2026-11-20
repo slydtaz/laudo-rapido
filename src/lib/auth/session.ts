@@ -43,12 +43,17 @@ export async function criarSessao(usuarioId: string, empresaId: string): Promise
   return token
 }
 
+/** Token opaco do cookie `sessao`, ou `null` quando ausente. */
+export function extrairTokenCookie(req: Request): string | null {
+  return extrairCookie(req.headers.get('cookie'), COOKIE_SESSAO)
+}
+
 /**
  * Lê o cookie `sessao` e devolve a identidade da sessão ainda válida, ou
  * `null` quando o cookie está ausente, é desconhecido ou já expirou.
  */
 export async function lerSessao(req: Request): Promise<Sessao | null> {
-  const token = extrairCookie(req.headers.get('cookie'), COOKIE_SESSAO)
+  const token = extrairTokenCookie(req)
   if (!token) {
     return null
   }
@@ -60,4 +65,17 @@ export async function lerSessao(req: Request): Promise<Sessao | null> {
     .limit(1)
 
   return sessao ?? null
+}
+
+/**
+ * Encerra a sessão ao remover o token do banco. Idempotente: não há erro
+ * quando o cookie está ausente ou o token já é desconhecido/expirado.
+ * A expiração do cookie em si é feita pela rota de logout.
+ */
+export async function encerrarSessao(req: Request): Promise<void> {
+  const token = extrairTokenCookie(req)
+  if (!token) {
+    return
+  }
+  await db.delete(sessoes).where(eq(sessoes.id, token))
 }

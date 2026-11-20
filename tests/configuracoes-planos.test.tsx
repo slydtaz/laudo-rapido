@@ -2,13 +2,17 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ConfiguracoesPage from '@/app/configuracoes/page'
 import PlanosPage from '@/app/planos/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
 import { CHAVE_PREFERENCIAS } from '@/lib/config/preferencias'
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}))
 
 function comProvedores(conteudo: React.ReactNode) {
   return createElement(

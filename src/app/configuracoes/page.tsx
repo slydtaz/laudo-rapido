@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 
 import { useToast } from '@/components/ToastProvider'
 import { IDIOMAS, type Preferencias } from '@/lib/config/preferencias'
 import { usePreferencias } from '@/components/ProvedorPreferencias'
 import { useT } from '@/lib/i18n/useT'
+import { executarOtimista } from '@/lib/ui/acao-otimista'
 
 type Opcao<T extends string> = { valor: T; rotulo: string }
 
@@ -60,6 +62,7 @@ function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
 }
 
 export default function ConfiguracoesPage() {
+  const router = useRouter()
   const t = useT()
   const { avisar } = useToast()
   const { preferencias, atualizar } = usePreferencias()
@@ -67,6 +70,22 @@ export default function ConfiguracoesPage() {
   function mudar(parcial: Partial<Preferencias>) {
     atualizar(parcial)
     avisar(t('configSalvo'))
+  }
+
+  function sair() {
+    void executarOtimista({
+      aplicar: () => undefined,
+      executar: async () => {
+        const resposta = await fetch('/api/v1/auth/logout', { method: 'POST' })
+        if (!resposta.ok) throw new Error('logout falhou')
+      },
+      aoSucesso: () => {
+        avisar(t('configSaiu'))
+        router.push('/login')
+        router.refresh()
+      },
+      aoErro: () => avisar(t('loginErroServidor'), 'erro'),
+    })
   }
 
   return (
@@ -166,6 +185,19 @@ export default function ConfiguracoesPage() {
           </div>
         </Secao>
       </form>
+
+      <section className="card reveal space-y-4 p-5 sm:p-8" aria-label={t('configSessao')}>
+        <Secao titulo={t('configSessao')}>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="max-w-md text-sm leading-relaxed text-muted">
+              {t('configSairDica')}
+            </p>
+            <button type="button" onClick={sair} className="btn btn-soft min-h-11">
+              {t('configSair')}
+            </button>
+          </div>
+        </Secao>
+      </section>
     </main>
   )
 }
