@@ -52,12 +52,15 @@ describe('configurações e planos', () => {
     expect(container.querySelectorAll('form')).toHaveLength(1)
   })
 
-  it('mostra três planos sem formulário de pagamento', () => {
+  it('mostra quatro planos sem formulário de pagamento', () => {
     const { container } = render(comProvedores(createElement(PlanosPage)))
 
-    for (const nome of ['Gratuito', 'Pro', 'Empresas']) {
+    for (const nome of ['Gratuito', 'Pro', 'Equipe', 'Enterprise']) {
       expect(screen.getByText(nome)).toBeTruthy()
     }
+    expect(screen.getByText('R$ 19,90')).toBeTruthy()
+    expect(screen.getByText('R$ 39,90')).toBeTruthy()
+    expect(screen.getByText('Sob consulta')).toBeTruthy()
     expect(container.querySelector('form')).toBeNull()
     expect(container.querySelector('input')).toBeNull()
     expect(screen.queryByText(/checkout|cartão de crédito|dados de pagamento/i)).toBeNull()

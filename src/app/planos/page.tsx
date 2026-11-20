@@ -11,6 +11,7 @@ type Plano = {
   dica: ChaveTexto
   itens: ChaveTexto
   destaque?: boolean
+  semPeriodo?: boolean
 }
 
 const PLANOS: Plano[] = [
@@ -28,16 +29,24 @@ const PLANOS: Plano[] = [
     destaque: true,
   },
   {
+    nome: 'planoEquipe',
+    preco: 'planoEquipePreco',
+    dica: 'planoEquipeDica',
+    itens: 'planoEquipeItens',
+  },
+  {
     nome: 'planoEmpresas',
     preco: 'planoEmpresasPreco',
     dica: 'planoEmpresasDica',
     itens: 'planoEmpresasItens',
+    semPeriodo: true,
   },
 ]
 
 const FAQ: Array<[ChaveTexto, ChaveTexto]> = [
   ['planosFaq1P', 'planosFaq1R'],
   ['planosFaq2P', 'planosFaq2R'],
+  ['planosFaq3P', 'planosFaq3R'],
 ]
 
 export default function PlanosPage() {
@@ -58,11 +67,11 @@ export default function PlanosPage() {
         </Link>
       </header>
 
-      <section className="grid gap-5 lg:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {PLANOS.map((plano, indice) => (
           <article
             key={plano.nome}
-            className={`card card-lift ${['reveal', 'reveal-2', 'reveal-3'][indice]} relative flex flex-col p-6 sm:p-7 ${
+            className={`card card-lift ${['reveal', 'reveal-2', 'reveal-3', 'reveal-4'][indice]} relative flex flex-col p-5 sm:p-6 ${
               plano.destaque ? 'border-brand' : ''
             }`}
           >
@@ -71,12 +80,12 @@ export default function PlanosPage() {
                 {t('planoMais')}
               </span>
             )}
-            <h2>{t(plano.nome)}</h2>
-            <p className="mt-4 flex items-baseline gap-1">
+            <h2 className="text-lg">{t(plano.nome)}</h2>
+            <p className="mt-4 flex flex-wrap items-baseline gap-1">
               <span className="font-display text-3xl font-semibold tracking-tight">
                 {t(plano.preco)}
               </span>
-              {plano.nome !== 'planoEmpresas' && (
+              {!plano.semPeriodo && (
                 <span className="text-sm text-muted">{t('planoPorMes')}</span>
               )}
             </p>
