@@ -1,9 +1,36 @@
 import type { Metadata, Viewport } from 'next'
+import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
 
+import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import RegistradorSW from '@/components/RegistradorSW'
 
 import './globals.css'
+
+const sora = localFont({
+  src: '../fonts/sora-latin.woff2',
+  variable: '--font-sora',
+  display: 'swap',
+  weight: '400 700',
+})
+
+const dmSans = localFont({
+  src: '../fonts/dm-sans-latin.woff2',
+  variable: '--font-dm-sans',
+  display: 'swap',
+  weight: '400 700',
+})
+
+/** Aplica a preferência salva antes da primeira pintura, sem flash de tema. */
+const SCRIPT_PREFERENCIAS = `(function(){try{
+var p=JSON.parse(localStorage.getItem('laudo-rapido:preferencias:v1')||'{}');
+var t=p.tema||'sistema';var e=window.matchMedia('(prefers-color-scheme: dark)').matches;
+var r=document.documentElement;
+r.dataset.theme=(t==='escuro'||(t==='sistema'&&e))?'escuro':'claro';
+r.dataset.motion=p.movimento==='reduzido'?'reduzido':'completo';
+r.dataset.texto=(p.tamanhoTexto==='grande'||p.tamanhoTexto==='extra')?p.tamanhoTexto:'normal';
+var i={ptBR:'pt-BR',en:'en',es:'es',fr:'fr',de:'de'};r.lang=i[p.idioma]||'pt-BR';
+}catch(e){}})();`
 
 export const metadata: Metadata = {
   title: 'LaudoRápido',
@@ -29,10 +56,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${sora.variable} ${dmSans.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_PREFERENCIAS }} />
+      </head>
       <body>
-        <RegistradorSW />
-        {children}
+        <ProvedorPreferencias>
+          <RegistradorSW />
+          {children}
+        </ProvedorPreferencias>
       </body>
     </html>
   )
