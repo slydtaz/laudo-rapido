@@ -3,9 +3,11 @@
 Domínio de produção: `https://laudo-rapido.vercel.app`.
 Callback Google (exato): `https://laudo-rapido.vercel.app/api/v1/auth/google/callback`.
 
-Este arquivo é um checklist para execução futura. Nenhum passo abaixo foi executado nesta task:
-não houve criação de projeto, `vercel link`, configuração de variáveis, migração em produção nem deploy.
-O dono configura os valores no painel da Vercel; nenhum segredo é registrado neste arquivo.
+Este arquivo é um checklist para execução futura. Nenhum passo de publicação foi executado nesta task.
+O projeto `slydtx/laudo-rapido` e o `vercel link` desta worktree já existiam antes da Task 11, e
+`GOOGLE_REDIRECT_URI` e `EMAIL_PERMITIDO` já estavam configurados em Production. Não houve
+configuração das demais variáveis, migração em produção nem deploy. O dono conclui os valores no
+painel da Vercel; nenhum segredo é registrado neste arquivo.
 `vercel.json` já fixa `framework: nextjs` e `regions: ["gru1"]`.
 
 ## Variáveis de ambiente (nomes exatos)
@@ -34,7 +36,7 @@ Produção não usa `localhost`: a aplicação falha fechado sem `GOOGLE_REDIREC
 ## Passos (somente após confirmação explícita do dono)
 
 1. No terminal do dono, na pasta da worktree: `vercel login`.
-2. Ligar a pasta ao projeto: `vercel link`.
+2. Ligar a pasta ao projeto: `vercel link` (nesta worktree já está feito; execute apenas em outra pasta).
 3. Aplicar a migração localmente, antes do deploy, com o banco já configurado:
 
    ```sh

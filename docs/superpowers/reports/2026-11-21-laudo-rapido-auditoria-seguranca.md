@@ -104,9 +104,10 @@ O medo específico relatado — alguém editar um arquivo salvo no aparelho e es
 
 ## Estado final (Task 11 do gate de produção)
 
-Escopo desta atualização: HEAD `6703f0e`, branch `feature/laudo-rapido-mvp`. Os achados acima permanecem
-registrados como descobertas originais; a coluna abaixo descreve o estado verificado após as correções
-das Tasks 1–10 e do plano legal/SaaS/OAuth.
+Escopo desta atualização: Task 11 do gate, sobre a base funcional `6703f0e` (mais `b114c06` de
+`.gitignore`), branch `feature/laudo-rapido-mvp`; documentação consolidada no commit `a7dde43`. Os
+achados acima permanecem registrados como descobertas originais; a coluna abaixo descreve o estado
+verificado após as correções das Tasks 1–10 e do plano legal/SaaS/OAuth.
 
 | Item | Estado final | Evidência |
 | --- | --- | --- |
@@ -123,7 +124,7 @@ das Tasks 1–10 e do plano legal/SaaS/OAuth.
 
 ### Evidências de verificação da Task 11
 
-- `corepack pnpm vitest run --maxWorkers=4`: **47 arquivos / 227 testes aprovados**, exit 0, 117,34 s.
+- `corepack pnpm vitest run --maxWorkers=4`: **47 arquivos / 227 testes aprovados**, exit 0 em duas execuções independentes registradas (117,34 s e 114,95 s).
 - `corepack pnpm build`: **exit 0**, 38 páginas geradas (`✓ Generating static pages (38/38)`).
 - `corepack pnpm test` (tentativa única, sem alterar `vitest.config.ts`): **47 arquivos / 227 testes aprovados**, exit 0, 91,92 s. Nenhum flake de PGlite observado nesta execução; `--maxWorkers=4` permanece como evidência autoritativa.
 - Smoke local em `http://127.0.0.1:3100` (`corepack pnpm dev -p 3100`, servidor encerrado ao final): `/privacidade` 200, `/termos` 200, `/cookies` 200, `/planos` sem cookie 307, `/api/health` 200. O HTML de `/login` (200) contém `/privacidade`, `/termos`, `/cookies` e `Entrar`. Não houve login Google real; o bloqueio de outro e-mail é coberto por `tests/acesso-apis.test.ts` e `tests/google-rota.test.ts`.
@@ -131,8 +132,11 @@ das Tasks 1–10 e do plano legal/SaaS/OAuth.
 
 ### Bloqueios de deploy e confirmação
 
-Nada foi implantado. Não houve `vercel --prod`, `vercel link`, criação de projeto, configuração de
-variáveis no painel, migração em produção, cadastro da URI no Google Cloud Console, push ou merge.
-Restam como bloqueios externos, de responsabilidade do dono: configurar as 15 variáveis listadas em
-`docs/deploy-vercel.md`, cadastrar `https://laudo-rapido.vercel.app/api/v1/auth/google/callback` no
-Google Cloud Console e dar confirmação explícita para o deploy. Checklist em `docs/deploy-vercel.md`.
+Nada foi implantado nesta task: não houve `vercel --prod`, configuração de variáveis no painel,
+migração em produção, cadastro da URI no Google Cloud Console, push ou merge. O projeto Vercel, o
+`vercel link` e as variáveis `GOOGLE_REDIRECT_URI` e `EMAIL_PERMITIDO` já existiam antes da Task 11
+(conforme ledger do gate); nenhum desses passos foi refeito aqui.
+Restam como bloqueios externos, de responsabilidade do dono: conferir/configurar as 13 variáveis
+ainda pendentes entre as 15 listadas em `docs/deploy-vercel.md`, confirmar o cadastro de
+`https://laudo-rapido.vercel.app/api/v1/auth/google/callback` no Google Cloud Console e dar
+confirmação explícita para o deploy. Checklist em `docs/deploy-vercel.md`.
