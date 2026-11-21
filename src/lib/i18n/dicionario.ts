@@ -143,6 +143,8 @@ export const ptBR = {
   erro404Texto: 'O endereço que você abriu não existe ou o link expirou.',
   erro404Acao: 'Voltar ao início',
   carregando: 'Carregando…',
+  pwaAtualizacao: 'Nova versão disponível',
+  pwaBotao: 'Atualizar',
 
   desenvTitulo: 'Aplicativo em desenvolvimento',
   desenvTexto: 'Estamos preparando esta área. Volte em breve.',
@@ -367,6 +369,8 @@ const en: DicionarioTextos = {
   erro404Texto: 'This address does not exist or the link has expired.',
   erro404Acao: 'Back to home',
   carregando: 'Loading…',
+  pwaAtualizacao: 'New version available',
+  pwaBotao: 'Update',
 
   desenvTitulo: 'App under development',
   desenvTexto: 'We are getting this area ready. Please check back soon.',
@@ -588,6 +592,8 @@ const es: DicionarioTextos = {
   erro404Texto: 'Esta dirección no existe o el enlace caducó.',
   erro404Acao: 'Volver al inicio',
   carregando: 'Cargando…',
+  pwaAtualizacao: 'Nueva versión disponible',
+  pwaBotao: 'Actualizar',
 
   desenvTitulo: 'Aplicación en desarrollo',
   desenvTexto: 'Estamos preparando esta área. Vuelve pronto.',
@@ -809,6 +815,8 @@ const fr: DicionarioTextos = {
   erro404Texto: "Cette adresse n'existe pas ou le lien a expiré.",
   erro404Acao: "Retour à l'accueil",
   carregando: 'Chargement…',
+  pwaAtualizacao: 'Nouvelle version disponible',
+  pwaBotao: 'Mettre à jour',
 
   desenvTitulo: 'Application en développement',
   desenvTexto: 'Nous préparons cette zone. Revenez bientôt.',
@@ -1030,6 +1038,8 @@ const de: DicionarioTextos = {
   erro404Texto: 'Diese Adresse existiert nicht oder der Link ist abgelaufen.',
   erro404Acao: 'Zurück zur Startseite',
   carregando: 'Laden…',
+  pwaAtualizacao: 'Neue Version verfügbar',
+  pwaBotao: 'Aktualisieren',
 
   desenvTitulo: 'App in Entwicklung',
   desenvTexto: 'Wir bereiten diesen Bereich vor. Bitte bald wieder vorbeischauen.',
