@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 
+import { useConfiguracao } from '@/components/ProvedorConfiguracao'
 import type { ChaveTexto } from '@/lib/i18n/dicionario'
 import { useT } from '@/lib/i18n/useT'
-import { CATALOGO_PLANOS } from '@/lib/saas/planos'
+import { CATALOGO_PLANOS, ID_CONFIG_POR_PLANO, textoPlano } from '@/lib/saas/planos'
 
 const FAQ: Array<[ChaveTexto, ChaveTexto]> = [
   ['planosFaq1P', 'planosFaq1R'],
@@ -14,6 +15,7 @@ const FAQ: Array<[ChaveTexto, ChaveTexto]> = [
 
 export default function PlanosPage() {
   const t = useT()
+  const { configuracao } = useConfiguracao()
 
   return (
     <main className="space-y-8">
@@ -31,52 +33,57 @@ export default function PlanosPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {CATALOGO_PLANOS.map((plano, indice) => (
-          <article
-            key={plano.id}
-            className={`card card-lift ${['reveal', 'reveal-2', 'reveal-3', 'reveal-4'][indice]} relative flex flex-col p-5 sm:p-6 ${
-              plano.destaque ? 'border-brand' : ''
-            }`}
-          >
-            {plano.destaque && (
-              <span className="chip chip-brand absolute -top-3 right-5">
-                {t('planoMais')}
-              </span>
-            )}
-            <h2 className="text-lg">{t(plano.nome)}</h2>
-            <p className="mt-4 flex flex-wrap items-baseline gap-1">
-              <span className="font-display text-3xl font-semibold tracking-tight">
-                {t(plano.preco)}
-              </span>
-              {!plano.semPeriodo && (
-                <span className="text-sm text-muted">{t('planoPorMes')}</span>
-              )}
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              {t(plano.dica)}
-            </p>
-            <div className="divider my-6" />
-            <ul className="flex-1 space-y-3 text-sm">
-              {t(plano.itens)
-                .split(';')
-                .filter(Boolean)
-                .map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <span aria-hidden="true" className="mt-0.5 font-bold text-success">
-                      ✓
-                    </span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-            </ul>
-            <Link
-              href="/login"
-              className={`btn mt-8 ${plano.destaque ? 'btn-primary' : 'btn-soft'}`}
+        {CATALOGO_PLANOS.map((plano, indice) => {
+          const sobreposicao = configuracao?.planos?.find(
+            (item) => item.id === ID_CONFIG_POR_PLANO[plano.id],
+          )
+          return (
+            <article
+              key={plano.id}
+              className={`card card-lift ${['reveal', 'reveal-2', 'reveal-3', 'reveal-4'][indice]} relative flex flex-col p-5 sm:p-6 ${
+                plano.destaque ? 'border-brand' : ''
+              }`}
             >
-              {t('planosCta')}
-            </Link>
-          </article>
-        ))}
+              {plano.destaque && (
+                <span className="chip chip-brand absolute -top-3 right-5">
+                  {t('planoMais')}
+                </span>
+              )}
+              <h2 className="text-lg">{textoPlano(plano, 'nome', sobreposicao, t)}</h2>
+              <p className="mt-4 flex flex-wrap items-baseline gap-1">
+                <span className="font-display text-3xl font-semibold tracking-tight">
+                  {t(plano.preco)}
+                </span>
+                {!plano.semPeriodo && (
+                  <span className="text-sm text-muted">{t('planoPorMes')}</span>
+                )}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-muted">
+                {textoPlano(plano, 'dica', sobreposicao, t)}
+              </p>
+              <div className="divider my-6" />
+              <ul className="flex-1 space-y-3 text-sm">
+                {textoPlano(plano, 'itens', sobreposicao, t)
+                  .split(';')
+                  .filter(Boolean)
+                  .map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span aria-hidden="true" className="mt-0.5 font-bold text-success">
+                        ✓
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+              </ul>
+              <Link
+                href="/login"
+                className={`btn mt-8 ${plano.destaque ? 'btn-primary' : 'btn-soft'}`}
+              >
+                {t('planosCta')}
+              </Link>
+            </article>
+          )
+        })}
       </section>
 
       <section className="card space-y-4 p-5 sm:p-8">

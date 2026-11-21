@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import PlanosPage from '@/app/(app)/planos/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import { IDIOMAS_TEXTOS, ptBR } from '@/lib/i18n/dicionario'
-import { CATALOGO_PLANOS } from '@/lib/saas/planos'
+import { CATALOGO_PLANOS, textoPlanoPermitido } from '@/lib/saas/planos'
 
 const IDIOMAS = ['ptBR', 'en', 'es', 'fr', 'de'] as const
 
@@ -117,6 +117,13 @@ describe('textos honestos da vitrine', () => {
 
   it('mantém o aviso de referência sem cobrança', () => {
     expect(ptBR.planosAviso).toBe('Valores de referência. Nenhuma cobrança é feita nesta versão.')
+  })
+
+  it('rejeita promessa proibida mesmo sem acentos', () => {
+    expect(textoPlanoPermitido('até 5 tecnicos', 'Plano honesto')).toBe('Plano honesto')
+    expect(textoPlanoPermitido('5 tecnicos', 'Plano honesto')).toBe('Plano honesto')
+    expect(textoPlanoPermitido('Suporte prioritario', 'Plano honesto')).toBe('Plano honesto')
+    expect(textoPlanoPermitido('Usuarios ilimitados', 'Plano honesto')).toBe('Plano honesto')
   })
 
   it('repete os preços em reais e o rótulo Enterprise nos cinco idiomas', () => {

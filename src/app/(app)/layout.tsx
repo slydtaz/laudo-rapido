@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 
+import ProvedorConfiguracao from '@/components/ProvedorConfiguracao'
 import { exigirAcesso } from '@/lib/auth/acesso'
 
 /**
@@ -16,5 +17,5 @@ export default async function LayoutApp({ children }: { children: ReactNode }) {
 
   if (!(await exigirAcesso(req))) redirect('/em-desenvolvimento')
 
-  return <>{children}</>
+  return <ProvedorConfiguracao>{children}</ProvedorConfiguracao>
 }
