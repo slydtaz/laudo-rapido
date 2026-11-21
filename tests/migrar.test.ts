@@ -25,6 +25,7 @@ describe('runner de migrações', () => {
       '0002_sessoes.sql',
       '0003_auth.sql',
       '0004_tentativas_login.sql',
+      '0005_configuracao_app.sql',
     ])
 
     const executarSql = (comando: string) => pglite.exec(comando)

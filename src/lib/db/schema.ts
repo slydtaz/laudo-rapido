@@ -9,6 +9,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
+import type { Configuracao } from '../configuracao/modelo'
+
 export const statusVisita = pgEnum('status_visita', [
   'rascunho',
   'sincronizada',
@@ -118,6 +120,13 @@ export const tentativasLogin = pgTable('tentativas_login', {
   chave: text('chave').primaryKey(),
   tentativas: integer('tentativas').notNull().default(0),
   criadoEm: timestamp('criado_em', { mode: 'date' }).notNull().defaultNow(),
+})
+
+/** Configuração editável do aplicativo: uma única linha, `chave = 'app'`. */
+export const configuracaoApp = pgTable('configuracao_app', {
+  chave: text('chave').primaryKey(),
+  valor: jsonb('valor').$type<Configuracao>().notNull(),
+  atualizadoEm: timestamp('atualizado_em', { mode: 'date' }).defaultNow(),
 })
 
 export type Empresa = typeof empresas.$inferSelect
