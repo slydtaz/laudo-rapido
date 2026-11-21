@@ -12,3 +12,5 @@ npm-debug.log*
 .worktrees/
 .DS_Store
 drizzle/
+.vercel
+.env*
