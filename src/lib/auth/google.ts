@@ -86,10 +86,13 @@ export async function trocarCodigo(
   return { idToken: dados.id_token }
 }
 
-type JwksCache = { chaves: JsonWebKey[]; expiraEm: number }
+/** `kid` faz parte do JWKS, mas não do tipo DOM `JsonWebKey`. */
+type ChaveJwk = JsonWebKey & { kid?: string; use?: string; alg?: string }
+
+type JwksCache = { chaves: ChaveJwk[]; expiraEm: number }
 let cacheJwks: JwksCache | null = null
 
-async function chavesPublicas(): Promise<JsonWebKey[]> {
+async function chavesPublicas(): Promise<ChaveJwk[]> {
   if (cacheJwks && cacheJwks.expiraEm > Date.now()) {
     return cacheJwks.chaves
   }
@@ -101,7 +104,7 @@ async function chavesPublicas(): Promise<JsonWebKey[]> {
   if (!Array.isArray(dados.keys)) {
     throw new Error('JWKS inválido.')
   }
-  const chaves = dados.keys as JsonWebKey[]
+  const chaves = dados.keys as ChaveJwk[]
   cacheJwks = { chaves, expiraEm: Date.now() + 5 * 60 * 1000 }
   return chaves
 }

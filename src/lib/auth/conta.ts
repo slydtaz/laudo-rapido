@@ -106,7 +106,7 @@ export async function verificarEmail(
 /** Emite um novo link de verificação. Nunca revela se a conta existe. */
 export async function reenviarVerificacao(email: string): Promise<ResultadoEnvio | null> {
   const [usuario] = await db
-    .select({ id: usuarios.id })
+    .select({ id: usuarios.id, email: usuarios.email })
     .from(usuarios)
     .where(eq(usuarios.email, normalizarEmail(email)))
     .limit(1)

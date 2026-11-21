@@ -8,6 +8,7 @@ import {
   solicitarRedefinicao,
   verificarEmail,
 } from '../src/lib/auth/conta'
+import { listarLinksDemo } from '../src/lib/auth/email'
 import { hashSenha, verificarSenha } from '../src/lib/auth/password'
 import { criarToken } from '../src/lib/auth/tokens'
 import { criarBancoTeste, db, setBancoAtivo } from '../src/lib/db/client'
@@ -107,6 +108,17 @@ describe('conta: registro, verificação e recuperação', () => {
       ok: false,
       erro: 'Link inválido ou expirado.',
     })
+  })
+
+  it('o reenvio usa o e-mail normalizado da conta no link emitido', async () => {
+    await usuarioComSenha('reenviar@exemplo.local')
+
+    const envio = await reenviarVerificacao('  REENVIAR@exemplo.local  ')
+    expect(envio).not.toBeNull()
+    if (!envio) return
+    const link = listarLinksDemo().find((item) => item.token === envio.token)
+    expect(link?.tipo).toBe('verificar_email')
+    expect(link?.email).toBe('reenviar@exemplo.local')
   })
 
   it('não emite token para e-mail inexistente', async () => {
