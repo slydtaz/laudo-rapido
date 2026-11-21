@@ -20,10 +20,15 @@ export function configuracaoGoogle(): ConfigGoogle | null {
   if (!clientId || !clientSecret) {
     return null
   }
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI
+  // Em produção, nunca cair no callback local: sem a URI configurada, falha fechado.
+  if (process.env.NODE_ENV === 'production' && !redirectUri?.trim()) {
+    return null
+  }
   return {
     clientId,
     clientSecret,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI ?? `http://localhost:3000${CAMINHO_CALLBACK}`,
+    redirectUri: redirectUri ?? `http://localhost:3000${CAMINHO_CALLBACK}`,
   }
 }
 
