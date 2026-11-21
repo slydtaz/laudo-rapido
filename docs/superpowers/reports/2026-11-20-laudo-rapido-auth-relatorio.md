@@ -25,8 +25,8 @@ Preservados: cookie `sessao` HttpOnly/SameSite=Lax, PWA/offline-first, rotas atu
 ```
 corepack pnpm test
  Test Files  37 passed (37)
-      Tests  133 passed (133)
-   Duration  46.95s
+      Tests  138 passed (138)
+   Duration  53.96s
 ```
 
 Nenhum teste pulado. A suíte cobre os cinco Review Focus do plano: `state` do OAuth, token reutilizado/expirado/tipo errado, conta local não verificada, não enumeração de e-mail e demo indisponível em produção.
@@ -85,10 +85,28 @@ Seis páginas novas (`/login`, `/registro`, `/verificar-email`, `/esqueci-senha`
 - Tema aplicado corretamente nas 48 combinações (duas leituras iniciais em `/verificar-email`/`/registro` foram falsos negativos de hidratação; confirmadas com espera condicional pelo atributo `data-theme`).
 - Console: sem erros nas páginas auditadas. Os erros capturados no período foram do servidor de desenvolvimento corrompido por uma reexecução de `next build` com `dev` ativo (500/HMR/`hot-update`) e o `404` de `favicon.ico`, todos fora das páginas auditadas após reinício do dev server.
 
+### 2.6 Polida final e revisão independente
+
+Um revisor sênior externo avaliou o intervalo `7622255..4cc16d8` contra a spec, os cinco Review Focus e a qualidade de código. Não encontrou problemas críticos. Cinco achados foram tratados com RED → GREEN:
+
+| Arquivo | Achado | Correção |
+| --- | --- | --- |
+| `src/lib/auth/tokens.ts`, `src/lib/auth/conta.ts` | `consumirToken` queimava o token antes da gravação que ele autoriza; uma falha downstream deixava o usuário sem token e no cooldown de 60 s | `consumirToken` aceita cliente opcional; verificação e redefinição passaram a consumir + gravar na mesma transação. O hash Argon2 é calculado antes da transação. Testes injetam `RAISE EXCEPTION` real via trigger, sem mock |
+| `src/lib/auth/conta.ts` | Duas submissões simultâneas podiam passar pelo `SELECT` de e-mail duplicado e virar `500` com `23505` | `catch` normaliza `23505` (inclusive dentro de `cause`, como o Drizzle embrulha) para a mesma resposta `E-mail já cadastrado.` |
+| `src/app/conta/page.tsx` | Cartão de perfil ficava com nome/empresa antigos após salvar; conta Google que criava senha não mostrava o campo "Senha atual" até recarregar | estado local atualizado após PATCH e após troca de senha |
+| `docs/auth-google.md` | Contrato do webhook documentava campo `token` inexistente | documento corrigido para `link` (contém o token) e aviso de que a caixa demo é compartilhada no dev |
+
+Achados **não adotados**, com razão:
+
+- **Caixa demo listar links de todas as contas:** é dev-only (`404` em produção) e foi desenhada como caixa compartilhada de desenvolvimento por decisão explícita do plano; a resposta não depende de parâmetro de e-mail e o guia agora alerta para não usar endereços reais. Alternativa (escopo por cookie) mudaria o contrato já validado por E2E.
+- **Limpeza de tokens antigos:** não há agendador no projeto; YAGNI.
+- **Padronização de tempo de resposta com webhook:** `EMAIL_WEBHOOK_URL` não está configurado; `byte-idêntico` atende ao requisito literal, e fila própria sai do escopo.
+- **Teste de integração do callback real e claims `nonce`/`iat`/`nbf`:** hardening futuro para quando credenciais Google reais existirem; PKCE + `state` + validação RS256/JWKS já cobrem o fluxo atual.
+
 ## 3. Segurança e privacidade
 
 - Respostas de `reenviar` e `esqueci` são `202 { ok: true }` byte-idênticas.
-- Tokens brutos nunca persistem; apenas hash SHA-256, com expiração, uso único e cooldown.
+- Tokens brutos nunca persistem; apenas hash SHA-256, com expiração, uso único e cooldown. Consumo e mudança autorizada ocorrem na mesma transação, então falha de gravação não queima o token.
 - `state` OAuth em cookie HttpOnly e `retorno` removido: callback redireciona sempre para `/`, sem open redirect.
 - Google só vincula quando `email_verified` do Google **e** `emailVerificadoEm` local existem; sub divergente é recusado.
 - Modo demo restrito a `NODE_ENV !== 'production'`; sem credenciais Google a rota inicial responde `503`.
@@ -106,7 +124,8 @@ Commits locais da Task 9:
 
 - `dff3f58 fix(auth): corrige tipos de build e e-mail do reenvio`
 - `b6a1234 fix(auth): estabiliza caixa demo e verificacao no StrictMode`
-- commit seguinte: `docs: relatorio de auditoria do login completo` (este arquivo).
+- `4cc16d8 docs: relatorio de auditoria do login completo`
+- commit seguinte: polida final (transação de token, concorrência de cadastro, estado de `/conta` e documentação).
 
 O ledger local `.superpowers/sdd/2026-11-20-laudo-rapido-auth-completo/progress.md` foi mantido fora do commit, conforme o plano.
 

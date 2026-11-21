@@ -60,6 +60,40 @@ describe('tela de conta', () => {
     )
   })
 
+  it('atualiza o cartão de perfil logo após salvar nome e empresa', async () => {
+    const buscar = vi.fn().mockImplementation((_url: string, opcoes?: RequestInit) =>
+      Promise.resolve(Response.json(opcoes?.method === 'PATCH' ? { ok: true } : PERFIL)),
+    )
+    vi.stubGlobal('fetch', buscar)
+
+    render(comProvedores(createElement(PaginaConta)))
+    expect(await screen.findByText('Ana')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Maria' } })
+    fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: 'Climatizar Sul' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+    expect(await screen.findByText('Ana Maria')).toBeTruthy()
+    expect(await screen.findByText('Climatizar Sul')).toBeTruthy()
+  })
+
+  it('mostra a senha atual depois que uma conta Google cria senha', async () => {
+    const perfilGoogle = { ...PERFIL, provedor: 'google' as const }
+    const buscar = vi.fn().mockImplementation((_url: string, opcoes?: RequestInit) =>
+      Promise.resolve(Response.json(opcoes?.method === 'POST' ? { ok: true } : perfilGoogle)),
+    )
+    vi.stubGlobal('fetch', buscar)
+
+    render(comProvedores(createElement(PaginaConta)))
+    expect(await screen.findByText('perfil@exemplo.local')).toBeTruthy()
+    expect(screen.queryByLabelText('Senha atual')).toBeNull()
+
+    fireEvent.change(screen.getByLabelText('Nova senha'), { target: { value: 'senha-nova-123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Alterar senha' }))
+
+    expect(await screen.findByLabelText('Senha atual')).toBeTruthy()
+  })
+
   it('configurações oferece link para a conta', () => {
     render(comProvedores(createElement(ConfiguracoesPage)))
     expect(screen.getByRole('link', { name: 'Minha conta' }).getAttribute('href')).toBe('/conta')

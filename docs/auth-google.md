@@ -63,7 +63,10 @@ código e a validação do `id_token`. Nenhuma credencial de produção é usada
 ## E-mail
 
 `EMAIL_WEBHOOK_URL`, quando definida, recebe um `POST` JSON com `para`,
-`assunto`, `link` e `token`. Sem webhook e fora de produção, os links ficam na
-caixa em memória `GET /api/v1/auth/demo-links` e aparecem em `/esqueci-senha`.
-Em produção sem webhook, o envio é silencioso e a resposta das rotas continua
-genérica — sem revelar se a conta existe.
+`assunto` e `link` — o token viaja dentro do link, não em um campo separado.
+Sem webhook e fora de produção, os links ficam na caixa em memória
+`GET /api/v1/auth/demo-links` e aparecem em `/esqueci-senha`. Essa caixa é
+compartilhada por quem usa o mesmo servidor de desenvolvimento e retorna `404`
+em produção: não use endereços reais nela. Em produção sem webhook, o envio é
+silencioso e a resposta das rotas continua genérica — sem revelar se a conta
+existe.

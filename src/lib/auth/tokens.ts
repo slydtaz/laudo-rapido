@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 
 import { and, desc, eq, gt, isNull } from 'drizzle-orm'
 
-import { db } from '../db/client'
+import { db, type Banco } from '../db/client'
 import { tokensAuth } from '../db/schema'
 
 export type TipoToken = 'verificar_email' | 'redefinir_senha'
@@ -36,12 +36,17 @@ export async function criarToken(usuarioId: string, tipo: TipoToken): Promise<st
   return token
 }
 
-/** Consome o token atomicamente; devolve o usuário uma única vez. */
+/**
+ * Consome o token atomicamente; devolve o usuário uma única vez. O cliente
+ * opcional permite que o consumo e a mudança que ele autoriza ocorram na mesma
+ * transação — se a mudança falhar, o token continua utilizável.
+ */
 export async function consumirToken(
   token: string,
   tipo: TipoToken,
+  cliente: Banco = db,
 ): Promise<string | null> {
-  const [linha] = await db
+  const [linha] = await cliente
     .update(tokensAuth)
     .set({ usadoEm: new Date() })
     .where(

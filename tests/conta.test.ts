@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import {
@@ -10,7 +10,7 @@ import {
 } from '../src/lib/auth/conta'
 import { listarLinksDemo } from '../src/lib/auth/email'
 import { hashSenha, verificarSenha } from '../src/lib/auth/password'
-import { criarToken } from '../src/lib/auth/tokens'
+import { consumirToken, criarToken } from '../src/lib/auth/tokens'
 import { criarBancoTeste, db, setBancoAtivo } from '../src/lib/db/client'
 import { empresas, sessoes, tokensAuth, usuarios } from '../src/lib/db/schema'
 
@@ -29,6 +29,27 @@ async function usuarioComSenha(email = 'existente@exemplo.local') {
     })
     .returning()
   return { banco, usuario }
+}
+
+async function comFalhaNaAtualizacao<T>(fn: () => Promise<T>): Promise<T> {
+  await db.execute(sql`
+    CREATE FUNCTION falha_proposital() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'falha injetada no teste';
+    END;
+    $$ LANGUAGE plpgsql
+  `)
+  await db.execute(sql`
+    CREATE TRIGGER falha_atualizacao_usuario
+    BEFORE UPDATE ON usuarios
+    FOR EACH ROW EXECUTE FUNCTION falha_proposital()
+  `)
+  try {
+    return await fn()
+  } finally {
+    await db.execute(sql`DROP TRIGGER IF EXISTS falha_atualizacao_usuario ON usuarios`)
+    await db.execute(sql`DROP FUNCTION IF EXISTS falha_proposital()`)
+  }
 }
 
 describe('conta: registro, verificação e recuperação', () => {
@@ -127,5 +148,54 @@ describe('conta: registro, verificação e recuperação', () => {
     await expect(solicitarRedefinicao('ninguém@exemplo.local')).resolves.toBeNull()
     await expect(reenviarVerificacao('ninguém@exemplo.local')).resolves.toBeNull()
     expect(await db.select().from(tokensAuth)).toHaveLength(0)
+  })
+
+  it('não queima o token de redefinição se a gravação falhar depois do consumo', async () => {
+    const { usuario } = await usuarioComSenha()
+    const token = await criarToken(usuario.id, 'redefinir_senha')
+
+    await expect(
+      comFalhaNaAtualizacao(() => redefinirSenha(token, 'senha-nova-123')),
+    ).rejects.toThrow()
+
+    await expect(consumirToken(token, 'redefinir_senha')).resolves.toBe(usuario.id)
+  })
+
+  it('não queima o token de verificação se a gravação falhar depois do consumo', async () => {
+    const { usuario } = await usuarioComSenha()
+    const token = await criarToken(usuario.id, 'verificar_email')
+
+    await expect(comFalhaNaAtualizacao(() => verificarEmail(token))).rejects.toThrow()
+
+    await expect(consumirToken(token, 'verificar_email')).resolves.toBe(usuario.id)
+  })
+
+  it('devolve erro amigável se o banco recusar o e-mail por concorrência', async () => {
+    setBancoAtivo(await criarBancoTeste())
+    await db.execute(sql`
+      CREATE FUNCTION duplicado_proposital() RETURNS trigger AS $$
+      BEGIN
+        RAISE EXCEPTION 'duplicate key value violates unique constraint' USING ERRCODE = '23505';
+      END;
+      $$ LANGUAGE plpgsql
+    `)
+    await db.execute(sql`
+      CREATE TRIGGER duplicado_usuario
+      BEFORE INSERT ON usuarios
+      FOR EACH ROW EXECUTE FUNCTION duplicado_proposital()
+    `)
+    try {
+      await expect(
+        criarContaComSenha({
+          nome: 'Ana',
+          empresa: 'Climatizar',
+          email: 'raca@exemplo.local',
+          senha: 'senha-forte-123',
+        }),
+      ).resolves.toEqual({ ok: false, erro: 'E-mail já cadastrado.' })
+    } finally {
+      await db.execute(sql`DROP TRIGGER IF EXISTS duplicado_usuario ON usuarios`)
+      await db.execute(sql`DROP FUNCTION IF EXISTS duplicado_proposital()`)
+    }
   })
 })

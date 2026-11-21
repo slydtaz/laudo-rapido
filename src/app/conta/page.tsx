@@ -58,6 +58,11 @@ export default function PaginaConta() {
         if (!resposta.ok) {
           throw new Error(t('contaErro'))
         }
+        const nomeSalvo = nome.trim()
+        const empresaSalva = empresa.trim()
+        setPerfil((anterior) =>
+          anterior ? { ...anterior, nome: nomeSalvo, empresa: empresaSalva } : anterior,
+        )
         avisar(t('contaSalvo'), 'info')
       },
       aoErro: () => avisar(t('contaErro'), 'erro'),
@@ -83,6 +88,8 @@ export default function PaginaConta() {
         }
         setSenhaAtual('')
         setSenhaNova('')
+        // A conta passou a ter senha: o campo "atual" precisa aparecer já.
+        setPerfil((anterior) => (anterior ? { ...anterior, provedor: 'senha' } : anterior))
         avisar(t('contaSalvo'), 'info')
       },
       aoErro: (falha) => avisar(falha instanceof Error ? falha.message : t('contaErro'), 'erro'),

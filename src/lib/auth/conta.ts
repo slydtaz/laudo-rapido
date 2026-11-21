@@ -37,6 +37,20 @@ function normalizarEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
+/** O driver expõe `code` direto; o Drizzle embrulha o erro em `cause`. */
+function eConflitoDeUnicidade(erro: unknown): boolean {
+  let atual: unknown = erro
+  const vistos = new Set<unknown>()
+  while (typeof atual === 'object' && atual !== null && !vistos.has(atual)) {
+    vistos.add(atual)
+    if ('code' in atual && atual.code === '23505') {
+      return true
+    }
+    atual = 'cause' in atual ? atual.cause : undefined
+  }
+  return false
+}
+
 async function emitirLink(
   usuarioId: string,
   email: string,
@@ -67,22 +81,32 @@ export async function criarContaComSenha(input: {
   }
 
   const senhaHash = await hashSenha(input.senha)
-  const usuarioId = await db.transaction(async (tx) => {
-    const [empresa] = await tx
-      .insert(empresas)
-      .values({ nome: input.empresa.trim() })
-      .returning({ id: empresas.id })
-    const [usuario] = await tx
-      .insert(usuarios)
-      .values({
-        empresaId: empresa.id,
-        email,
-        senhaHash,
-        nome: input.nome.trim(),
-      })
-      .returning({ id: usuarios.id })
-    return usuario.id
-  })
+  let usuarioId: string
+  try {
+    usuarioId = await db.transaction(async (tx) => {
+      const [empresa] = await tx
+        .insert(empresas)
+        .values({ nome: input.empresa.trim() })
+        .returning({ id: empresas.id })
+      const [usuario] = await tx
+        .insert(usuarios)
+        .values({
+          empresaId: empresa.id,
+          email,
+          senhaHash,
+          nome: input.nome.trim(),
+        })
+        .returning({ id: usuarios.id })
+      return usuario.id
+    })
+  } catch (erro) {
+    // Duas submissões simultâneas podem passar pelo SELECT acima; a constraint
+    // de unicidade decide e o erro ganha a mesma resposta do e-mail duplicado.
+    if (eConflitoDeUnicidade(erro)) {
+      return { ok: false, erro: 'E-mail já cadastrado.' }
+    }
+    throw erro
+  }
 
   const envio = await emitirLink(usuarioId, email, 'verificar_email')
   return { ok: true, usuarioId, envio: envio ?? { modo: 'silencioso' } }
@@ -92,14 +116,20 @@ export async function criarContaComSenha(input: {
 export async function verificarEmail(
   token: string,
 ): Promise<{ ok: true } | { ok: false; erro: string }> {
-  const usuarioId = await consumirToken(token, 'verificar_email')
+  const usuarioId = await db.transaction(async (tx) => {
+    const id = await consumirToken(token, 'verificar_email', tx)
+    if (!id) {
+      return null
+    }
+    await tx
+      .update(usuarios)
+      .set({ emailVerificadoEm: new Date() })
+      .where(eq(usuarios.id, id))
+    return id
+  })
   if (!usuarioId) {
     return { ok: false, erro: LINK_INVALIDO }
   }
-  await db
-    .update(usuarios)
-    .set({ emailVerificadoEm: new Date() })
-    .where(eq(usuarios.id, usuarioId))
   return { ok: true }
 }
 
@@ -137,15 +167,20 @@ export async function redefinirSenha(
   if (senhaNova.length < 8) {
     return { ok: false, erro: SENHA_CURTA }
   }
-  const usuarioId = await consumirToken(token, 'redefinir_senha')
+  // Hash antes da transação: um erro de Argon2 não pode queimar o token.
+  const senhaHash = await hashSenha(senhaNova)
+  const usuarioId = await db.transaction(async (tx) => {
+    const id = await consumirToken(token, 'redefinir_senha', tx)
+    if (!id) {
+      return null
+    }
+    await tx.update(usuarios).set({ senhaHash }).where(eq(usuarios.id, id))
+    await tx.delete(sessoes).where(eq(sessoes.usuarioId, id))
+    return id
+  })
   if (!usuarioId) {
     return { ok: false, erro: LINK_INVALIDO }
   }
-  await db
-    .update(usuarios)
-    .set({ senhaHash: await hashSenha(senhaNova) })
-    .where(eq(usuarios.id, usuarioId))
-  await db.delete(sessoes).where(eq(sessoes.usuarioId, usuarioId))
   return { ok: true }
 }
 
