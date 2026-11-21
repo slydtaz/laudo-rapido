@@ -99,3 +99,40 @@ O medo específico relatado — alguém editar um arquivo salvo no aparelho e es
 - Nenhum segredo hardcoded em arquivos versionados; `.env.local` e `.env.*.local` estão no `.gitignore`.
 - Nenhuma injeção SQL: Drizzle com parâmetros, nenhuma concatenação de SQL com entrada do usuário.
 - Nenhum campo de cobrança, status de pagamento ou plano por usuário no banco — plano é vitrine estática.
+
+---
+
+## Estado final (Task 11 do gate de produção)
+
+Escopo desta atualização: HEAD `6703f0e`, branch `feature/laudo-rapido-mvp`. Os achados acima permanecem
+registrados como descobertas originais; a coluna abaixo descreve o estado verificado após as correções
+das Tasks 1–10 e do plano legal/SaaS/OAuth.
+
+| Item | Estado final | Evidência |
+| --- | --- | --- |
+| A1 — gate por presença de cookie | **Corrigido.** O middleware continua como filtro rápido, mas a decisão real passou a ser server-side: `exigirAcesso()` valida sessão no banco e allowlist antes de páginas e APIs protegidas. | `tests/acesso.test.ts`, `tests/acesso-apis.test.ts` (gate em APIs e `/registro`), `tests/middleware.test.ts` (307 nas páginas protegidas, 403 nas APIs), `tests/telas-bloqueio.test.tsx` |
+| A2 — ausência de allowlist | **Corrigido.** `EMAIL_PERMITIDO` é lido somente no servidor; comparação normalizada e *fail closed* sem a variável. Outro e-mail recebe 403/redirecionamento neutro. | `tests/acesso.test.ts` (rejeição e fail closed), `tests/acesso-apis.test.ts` (`403 ERRO_ACESSO`), `tests/google-rota.test.ts` (`CONTA_LOCAL_NAO_VERIFICADA`), `tests/auth-rotas.test.ts` |
+| A3 — link público de entrega | **Decisão aplicada.** `/o/*` não é mais público: sem sessão responde 307 para `/em-desenvolvimento`; a consulta ao laudo permanece testada apenas como domínio. | `tests/middleware.test.ts` (`/o/x` na lista protegida), `tests/public-link.test.ts`, `tests/telas-bloqueio.test.tsx` |
+| M1 — DTO aceitava campos extras | **Corrigido.** `.strict()` no objeto raiz e em `dados`; `assinatura`, `status`, `empresaId` e `plano` vindos do cliente são rejeitados. | `src/lib/visita/dto.ts:9-25`, `tests/visita.test.ts:23-46`, `tests/sync.test.ts` |
+| M2 — sem limite de tentativas | **Corrigido.** Janela de 15 minutos, 10 tentativas por `ip + e-mail`, resposta 429; chave normalizada e sem log de segredo. | `src/lib/auth/rate-limit.ts`, `tests/rate-limit.test.ts`, `tests/auth-rotas.test.ts:153-186` |
+| M3 — service worker cacheava HTML do gate | **Corrigido.** Pré-cache apenas de assets e `/offline`; navegação não grava HTML no cache; aviso de nova versão com `SKIP_WAITING` e recarga única após aceite. | `tests/service-worker.test.ts:164-236`, `tests/atualizacao-pwa.test.tsx:105-149`, `public/sw.js`, `src/components/RegistradorSW.tsx` |
+| M4 — ausência de cabeçalhos de segurança | **Corrigido.** CSP com `default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `connect-src 'self'`; `nosniff`, `strict-origin-when-cross-origin` e `X-Frame-Options`. | `next.config.ts`, `tests/security-headers.test.ts:12-35` |
+| B1 — `dangerouslySetInnerHTML` estático | **Preservado e vigiado.** Continua apenas no script constante do layout; páginas legais não usam injeção de HTML; novos usos permanecem proibidos. | `src/app/layout.tsx`, `tests/paginas-legais.test.tsx:43-52` |
+| I1 — cookies de sessão e OAuth | **Adequado, sem alteração.** `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` em produção, 7 dias/10 minutos; PKCE e JWKS mantidos. | `src/lib/auth/cookie.ts`, `tests/cookie.test.ts:19-65`, `tests/google.test.ts` |
+| I2 — confiança em dados locais (offline-first) | **Mitigado no servidor.** `empresaId` vem da sessão, DTO estrito, mídia validada; nenhum campo forjado altera tenant ou plano. | `tests/sync.test.ts`, `tests/visita.test.ts:23-57`, `tests/midia.test.ts`, `tests/imagem.test.ts` |
+
+### Evidências de verificação da Task 11
+
+- `corepack pnpm vitest run --maxWorkers=4`: **47 arquivos / 227 testes aprovados**, exit 0, 117,34 s.
+- `corepack pnpm build`: **exit 0**, 38 páginas geradas (`✓ Generating static pages (38/38)`).
+- `corepack pnpm test` (tentativa única, sem alterar `vitest.config.ts`): **47 arquivos / 227 testes aprovados**, exit 0, 91,92 s. Nenhum flake de PGlite observado nesta execução; `--maxWorkers=4` permanece como evidência autoritativa.
+- Smoke local em `http://127.0.0.1:3100` (`corepack pnpm dev -p 3100`, servidor encerrado ao final): `/privacidade` 200, `/termos` 200, `/cookies` 200, `/planos` sem cookie 307, `/api/health` 200. O HTML de `/login` (200) contém `/privacidade`, `/termos`, `/cookies` e `Entrar`. Não houve login Google real; o bloqueio de outro e-mail é coberto por `tests/acesso-apis.test.ts` e `tests/google-rota.test.ts`.
+- Rótulos preservados: `Entrar`, `Registrar nova visita`, `Salvar visita no aparelho`, `Sincronizar agora`, `Copiar link`, `Baixar PDF`. Nenhum código, teste, preço, texto legal, OAuth, middleware, SW, gate ou smoke label foi alterado nesta task.
+
+### Bloqueios de deploy e confirmação
+
+Nada foi implantado. Não houve `vercel --prod`, `vercel link`, criação de projeto, configuração de
+variáveis no painel, migração em produção, cadastro da URI no Google Cloud Console, push ou merge.
+Restam como bloqueios externos, de responsabilidade do dono: configurar as 15 variáveis listadas em
+`docs/deploy-vercel.md`, cadastrar `https://laudo-rapido.vercel.app/api/v1/auth/google/callback` no
+Google Cloud Console e dar confirmação explícita para o deploy. Checklist em `docs/deploy-vercel.md`.
