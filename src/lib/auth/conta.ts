@@ -17,6 +17,22 @@ const LINK_INVALIDO = 'Link inválido ou expirado.'
 export type ResultadoOk = { ok: true; usuarioId: string; envio: ResultadoEnvio }
 export type ResultadoErro = { ok: false; erro: string }
 
+/** Contrato único do perfil Google, compartilhado pelo callback e pelo domínio. */
+export type PerfilGoogle = {
+  sub: string
+  email: string
+  emailVerificado: boolean
+  nome: string
+}
+
+export type ResultadoVinculo =
+  | { ok: true; usuarioId: string }
+  | {
+      ok: false
+      erro: string
+      codigo: 'EMAIL_NAO_VERIFICADO' | 'CONTA_LOCAL_NAO_VERIFICADA' | 'SUB_DIVERGENTE'
+    }
+
 function normalizarEmail(email: string): string {
   return email.trim().toLowerCase()
 }
@@ -131,6 +147,67 @@ export async function redefinirSenha(
     .where(eq(usuarios.id, usuarioId))
   await db.delete(sessoes).where(eq(sessoes.usuarioId, usuarioId))
   return { ok: true }
+}
+
+/**
+ * Só vincula quando Google e a conta local atestam o e-mail. Conta local
+ * existente e não verificada nunca é vinculada nem marcada como verificada.
+ */
+export async function vincularOuCriarGoogle(perfil: PerfilGoogle): Promise<ResultadoVinculo> {
+  if (!perfil.emailVerificado) {
+    return {
+      ok: false,
+      codigo: 'EMAIL_NAO_VERIFICADO',
+      erro: 'O Google não confirmou este e-mail.',
+    }
+  }
+  const email = normalizarEmail(perfil.email)
+  const [existente] = await db.select().from(usuarios).where(eq(usuarios.email, email)).limit(1)
+
+  if (!existente) {
+    const usuarioId = await db.transaction(async (tx) => {
+      const [empresa] = await tx
+        .insert(empresas)
+        .values({ nome: 'Minha empresa' })
+        .returning({ id: empresas.id })
+      const [usuario] = await tx
+        .insert(usuarios)
+        .values({
+          empresaId: empresa.id,
+          email,
+          nome: perfil.nome,
+          googleSub: perfil.sub,
+          emailVerificadoEm: new Date(),
+          senhaHash: null,
+        })
+        .returning({ id: usuarios.id })
+      return usuario.id
+    })
+    return { ok: true, usuarioId }
+  }
+
+  if (!existente.emailVerificadoEm) {
+    return {
+      ok: false,
+      codigo: 'CONTA_LOCAL_NAO_VERIFICADA',
+      erro: 'Entre com sua senha, verifique o e-mail e tente novamente.',
+    }
+  }
+  if (existente.googleSub && existente.googleSub !== perfil.sub) {
+    return {
+      ok: false,
+      codigo: 'SUB_DIVERGENTE',
+      erro: 'Esta conta já está vinculada a outro perfil do Google.',
+    }
+  }
+  await db
+    .update(usuarios)
+    .set({
+      googleSub: perfil.sub,
+      nome: existente.nome ?? perfil.nome,
+    })
+    .where(eq(usuarios.id, existente.id))
+  return { ok: true, usuarioId: existente.id }
 }
 
 /** Dados não sensíveis exibidos em `/conta`. */

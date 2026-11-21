@@ -26,6 +26,8 @@ describe('middleware de rotas públicas', () => {
       '/api/v1/auth/senha/esqueci',
       '/api/v1/auth/senha/redefinir',
       '/api/v1/auth/google',
+      '/api/v1/auth/google/callback',
+      '/api/v1/auth/google/demo',
       '/api/v1/auth/demo-links',
     ]) {
       expect(middleware(req(caminho)).status, caminho).toBe(200)

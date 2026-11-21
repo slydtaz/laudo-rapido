@@ -1,5 +1,21 @@
 import { COOKIE_SESSAO, DURACAO_SESSAO_SEGUNDOS } from './session'
 
+/**
+ * `Response.redirect()` devolve headers imutáveis; este helper permite anexar
+ * cookies ao redirecionamento sem violar essa restrição.
+ */
+export function redirecionar(
+  destino: URL | string,
+  status: 307 | 303,
+  cookies: string[] = [],
+): Response {
+  const headers = new Headers({ Location: String(destino) })
+  for (const cookie of cookies) {
+    headers.append('Set-Cookie', cookie)
+  }
+  return new Response(null, { status, headers })
+}
+
 /** Cookie de curta duração usado apenas durante o fluxo OAuth. */
 export const COOKIE_OAUTH = 'oauth'
 export const DURACAO_COOKIE_OAUTH_SEGUNDOS = 600
