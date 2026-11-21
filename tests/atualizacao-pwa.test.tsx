@@ -122,4 +122,29 @@ describe('aviso de atualização do PWA', () => {
     mock.dispararSW('controllerchange')
     expect(reload).toHaveBeenCalledTimes(1)
   })
+
+  it('não recarrega com controllerchange anterior ao aceite do usuário', async () => {
+    renderRegistrador()
+
+    await waitFor(() => {
+      expect(mock.register).toHaveBeenCalledWith('/sw.js', { updateViaCache: 'none' })
+    })
+
+    mock.dispararRegistro('updatefound')
+    mock.worker.state = 'installed'
+    mock.dispararWorker('statechange')
+
+    expect(await screen.findByText('Nova versão disponível')).toBeTruthy()
+
+    // O clients.claim() da primeira instalação dispara controllerchange sem
+    // que o usuário tenha aceitado a atualização.
+    mock.dispararSW('controllerchange')
+    expect(reload).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
+    expect(mock.worker.postMessage).toHaveBeenCalledWith({ type: 'SKIP_WAITING' })
+
+    mock.dispararSW('controllerchange')
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
 })

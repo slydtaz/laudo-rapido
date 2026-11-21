@@ -11,6 +11,7 @@ export default function RegistradorSW() {
   const t = useT()
   const [mostrarAtualizar, setMostrarAtualizar] = useState(false)
   const workerRef = useRef<ServiceWorker | null>(null)
+  const aceitouAtualizacaoRef = useRef(false)
   const recarregadoRef = useRef(false)
   const avisarRef = useRef(avisar)
   const mensagemRef = useRef(t('pwaAtualizacao'))
@@ -52,7 +53,9 @@ export default function RegistradorSW() {
     let worker: ServiceWorker | null = null
 
     const aoControllerChange = () => {
-      if (recarregadoRef.current) return
+      // O clients.claim() da primeira instalação também dispara
+      // controllerchange. Só recarrega depois que o usuário aceitou.
+      if (!aceitouAtualizacaoRef.current || recarregadoRef.current) return
       recarregadoRef.current = true
       location.reload()
     }
@@ -101,7 +104,10 @@ export default function RegistradorSW() {
     <div className="pointer-events-none fixed inset-x-4 bottom-20 z-50 flex justify-center sm:bottom-24">
       <button
         type="button"
-        onClick={() => workerRef.current?.postMessage({ type: 'SKIP_WAITING' })}
+        onClick={() => {
+          aceitouAtualizacaoRef.current = true
+          workerRef.current?.postMessage({ type: 'SKIP_WAITING' })
+        }}
         className="pop pointer-events-auto rounded-full border border-line bg-surface px-4 py-2 text-sm font-semibold text-fg shadow-lg"
         style={{ boxShadow: 'var(--shadow-lift)' }}
       >
