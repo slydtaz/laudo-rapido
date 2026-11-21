@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { createElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HistoricoPage from '@/app/visitas/page'
+import HistoricoPage from '@/app/(app)/visitas/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
 

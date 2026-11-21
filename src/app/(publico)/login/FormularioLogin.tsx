@@ -9,7 +9,7 @@ import { useToast } from '@/components/ToastProvider'
 import { useT } from '@/lib/i18n/useT'
 import { executarOtimista } from '@/lib/ui/acao-otimista'
 
-export default function PaginaLogin() {
+export default function FormularioLogin() {
   const router = useRouter()
   const t = useT()
   const { avisar } = useToast()

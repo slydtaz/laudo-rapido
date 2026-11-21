@@ -1,32 +1,35 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * Rotas acessíveis sem sessão. `/` é a landing atual; `/login` será criada
- * junto com a tela de login; a API de login e o health check também precisam
- * responder sem cookie. Todo o resto é protegido por padrão.
+ * Únicas rotas acessíveis sem sessão: login (senha e Google), recuperação,
+ * verificação, health e as telas de bloqueio. `/registro`, `/planos`, `/o/:token`
+ * e todo o resto ficam protegidos por padrão. A allowlist não roda aqui: o Edge
+ * só decide se há cookie; a validação real acontece nos layouts e nas rotas.
  */
-const ROTAS_PUBLICAS = [
-  '/',
+export const ROTAS_PUBLICAS = [
   '/login',
-  '/registro',
-  '/verificar-email',
+  '/em-desenvolvimento',
+  '/offline',
   '/esqueci-senha',
   '/redefinir-senha',
-  '/api/v1/auth/login',
-  '/api/v1/auth/logout',
-  '/api/v1/auth/registro',
-  '/api/v1/auth/verificar',
-  '/api/v1/auth/senha',
-  '/api/v1/auth/google',
-  '/api/v1/auth/demo-links',
+  '/verificar-email',
   '/api/health',
-  '/o',
+  '/api/v1/auth/login',
+  '/api/v1/auth/verificar',
+  '/api/v1/auth/verificar/reenviar',
+  '/api/v1/auth/senha/esqueci',
+  '/api/v1/auth/senha/redefinir',
+  '/api/v1/auth/google',
+  '/api/v1/auth/google/callback',
+  '/api/v1/auth/logout',
 ]
+
+/** Espelha ERRO_ACESSO sem importar módulos de banco para o runtime do Edge. */
+const ERRO_SEM_ACESSO = { erro: 'Aplicativo em desenvolvimento.' }
 
 /**
  * Checagem leve, segura no Edge runtime: apenas a presença do cookie `sessao`.
- * A validação real (lookup + expiração) é feita por `lerSessao` nas rotas e
- * páginas protegidas — aqui não se importa `db` nem `session.ts`.
+ * A validação real (lookup + expiração + allowlist) é feita por `exigirAcesso`.
  */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -38,19 +41,18 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Rotas de API não devem ser redirecionadas para uma página de login:
-  // o cliente precisa do 401 JSON para tratar a sessão expirada.
+  // API não deve ser redirecionada para uma página: o cliente espera JSON.
   if (pathname.startsWith('/api/')) {
-    return NextResponse.json({ erro: 'Sessão inválida ou expirada.' }, { status: 401 })
+    return NextResponse.json(ERRO_SEM_ACESSO, { status: 403 })
   }
 
   const url = req.nextUrl.clone()
-  url.pathname = '/login'
+  url.pathname = '/em-desenvolvimento'
   url.search = ''
   return NextResponse.redirect(url)
 }
 
 export const config = {
-  // Fora do middleware: assets do Next e arquivos estáticos (extensão no fim).
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.[a-zA-Z0-9]+$).*)'],
+  // Fora do middleware: assets do Next e arquivos com extensão no fim.
+  matcher: ['/((?!_next/static|__next/static|_next/image|favicon.ico|.*\\.[a-zA-Z0-9]+$).*)'],
 }

@@ -144,6 +144,12 @@ export const ptBR = {
   erro404Acao: 'Voltar ao início',
   carregando: 'Carregando…',
 
+  desenvTitulo: 'Aplicativo em desenvolvimento',
+  desenvTexto: 'Estamos preparando esta área. Volte em breve.',
+  offlineTitulo: 'Sem conexão',
+  offlineTexto:
+    'Verifique sua conexão e tente novamente. Os registros salvos no aparelho permanecem aqui.',
+
   configTitulo: 'Configurações',
   configSubtitulo: 'Ajustes ficam salvos neste aparelho.',
   configTemaClaro: 'Claro',
@@ -362,6 +368,12 @@ const en: DicionarioTextos = {
   erro404Acao: 'Back to home',
   carregando: 'Loading…',
 
+  desenvTitulo: 'App under development',
+  desenvTexto: 'We are getting this area ready. Please check back soon.',
+  offlineTitulo: 'No connection',
+  offlineTexto:
+    'Check your connection and try again. Records saved on this device remain here.',
+
   configTitulo: 'Settings',
   configSubtitulo: 'Preferences are saved on this device.',
   configTemaClaro: 'Light',
@@ -576,6 +588,12 @@ const es: DicionarioTextos = {
   erro404Texto: 'Esta dirección no existe o el enlace caducó.',
   erro404Acao: 'Volver al inicio',
   carregando: 'Cargando…',
+
+  desenvTitulo: 'Aplicación en desarrollo',
+  desenvTexto: 'Estamos preparando esta área. Vuelve pronto.',
+  offlineTitulo: 'Sin conexión',
+  offlineTexto:
+    'Revisa tu conexión e inténtalo de nuevo. Los registros guardados en el dispositivo siguen aquí.',
 
   configTitulo: 'Ajustes',
   configSubtitulo: 'Las preferencias se guardan en este dispositivo.',
@@ -792,6 +810,12 @@ const fr: DicionarioTextos = {
   erro404Acao: "Retour à l'accueil",
   carregando: 'Chargement…',
 
+  desenvTitulo: 'Application en développement',
+  desenvTexto: 'Nous préparons cette zone. Revenez bientôt.',
+  offlineTitulo: 'Hors connexion',
+  offlineTexto:
+    'Vérifiez votre connexion et réessayez. Les données enregistrées sur cet appareil restent ici.',
+
   configTitulo: 'Réglages',
   configSubtitulo: 'Les préférences sont enregistrées sur cet appareil.',
   configTemaClaro: 'Clair',
@@ -1006,6 +1030,12 @@ const de: DicionarioTextos = {
   erro404Texto: 'Diese Adresse existiert nicht oder der Link ist abgelaufen.',
   erro404Acao: 'Zurück zur Startseite',
   carregando: 'Laden…',
+
+  desenvTitulo: 'App in Entwicklung',
+  desenvTexto: 'Wir bereiten diesen Bereich vor. Bitte bald wieder vorbeischauen.',
+  offlineTitulo: 'Keine Verbindung',
+  offlineTexto:
+    'Prüfen Sie Ihre Verbindung und versuchen Sie es erneut. Auf diesem Gerät gespeicherte Einträge bleiben erhalten.',
 
   configTitulo: 'Einstellungen',
   configSubtitulo: 'Einstellungen werden auf diesem Gerät gespeichert.',

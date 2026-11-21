@@ -4,7 +4,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HomePage from '@/app/page'
+import HomePage from '@/app/(app)/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
 

@@ -74,7 +74,7 @@ export async function GET(req: Request) {
   }
 
   const token = await criarSessao(vinculo.usuarioId, usuario.empresaId)
-  return redirecionar(new URL('/', url.origin), 303, [
+  return redirecionar(new URL('/visitas', url.origin), 303, [
     definirCookieSessao(token),
     cookieOAuthExpirado(),
   ])

@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import ConfiguracoesPage from '@/app/configuracoes/page'
-import PaginaConta from '@/app/conta/page'
+import ConfiguracoesPage from '@/app/(app)/configuracoes/page'
+import PaginaConta from '@/app/(app)/conta/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
 

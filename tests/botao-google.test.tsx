@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import PaginaLogin from '@/app/login/page'
+import FormularioLogin from '@/app/(publico)/login/FormularioLogin'
 import PaginaRegistro from '@/app/registro/page'
 import BotaoGoogle from '@/components/BotaoGoogle'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
@@ -44,7 +44,7 @@ describe('botão Continuar com Google', () => {
   })
 
   it('está presente no login e no registro', () => {
-    const login = render(comProvedores(createElement(PaginaLogin)))
+    const login = render(comProvedores(createElement(FormularioLogin)))
     expect(screen.getByRole('link', { name: 'Continuar com Google' })).toBeTruthy()
     expect(screen.getByText('ou')).toBeTruthy()
     login.unmount()

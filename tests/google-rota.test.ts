@@ -119,7 +119,7 @@ describe('rotas do OAuth com Google', () => {
     expect(await db.select().from(usuarios)).toHaveLength(0)
   })
 
-  it('o callback demo cria sessão e redireciona para a home', async () => {
+  it('o callback demo cria sessão e redireciona para /visitas', async () => {
     setBancoAtivo(await criarBancoTeste())
     const { cookie, state } = fluxo()
 
@@ -128,7 +128,7 @@ describe('rotas do OAuth com Google', () => {
     )
 
     expect(resposta.status).toBe(303)
-    expect(resposta.headers.get('location')).toBe('http://localhost/')
+    expect(resposta.headers.get('location')).toBe('http://localhost/visitas')
     const sessao = resposta.headers.get('set-cookie') ?? ''
     expect(sessao).toContain(`${COOKIE_SESSAO}=`)
     expect(sessao).toContain('HttpOnly')

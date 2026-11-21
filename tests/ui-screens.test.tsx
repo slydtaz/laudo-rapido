@@ -7,8 +7,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
-import HomePage from '@/app/page'
-import PaginaLogin from '@/app/login/page'
+import HomePage from '@/app/(app)/page'
+import FormularioLogin from '@/app/(publico)/login/FormularioLogin'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -33,7 +33,7 @@ describe('telas principais', () => {
   })
 
   it('login tem rótulos associados e botão com nome estável', () => {
-    render(comProvedores(createElement(PaginaLogin)))
+    render(comProvedores(createElement(FormularioLogin)))
 
     expect(screen.getByLabelText('E-mail')).toBeTruthy()
     expect(screen.getByLabelText('Senha')).toBeTruthy()
