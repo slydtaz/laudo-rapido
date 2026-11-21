@@ -20,6 +20,31 @@ describe('domínio de visitas', () => {
     expect(result.success).toBe(false)
   })
 
+  it('rejeita campo extra em dados', () => {
+    const result = criarVisitaSchema.safeParse({
+      ...novaVisita('11111111-1111-4111-8111-111111111111'),
+      dados: { cliente: 'X', tipo: 'Y', observacoes: 'ok', assinatura: 'Paga' },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejeita campos extras na raiz', () => {
+    for (const campo of ['empresaId', 'status', 'plano']) {
+      const result = criarVisitaSchema.safeParse({
+        ...novaVisita('11111111-1111-4111-8111-111111111111'),
+        [campo]: 'injetado',
+      })
+      expect(result.success, campo).toBe(false)
+    }
+  })
+
+  it('aceita payload válido sem campos extras', () => {
+    const result = criarVisitaSchema.safeParse(
+      novaVisita('11111111-1111-4111-8111-111111111111'),
+    )
+    expect(result.success).toBe(true)
+  })
+
   it('isola visitas por empresa', async () => {
     setBancoAtivo(await criarBancoTeste())
     const [empresaA] = await db.insert(empresas).values({ nome: 'Empresa A' }).returning()

@@ -12,10 +12,12 @@ vi.mock('../src/lib/storage/client', async (importOriginal) => {
   return { ...original, salvarFoto: mocks.salvarFoto, salvarAssinatura: mocks.salvarAssinatura }
 })
 
+import { POST as postSync } from '../src/app/api/v1/visitas/sync/route'
+import { COOKIE_SESSAO, criarSessao } from '../src/lib/auth/session'
 import { sincronizarLote } from '../src/lib/visita/sync'
 import { criarBancoTeste, db, setBancoAtivo } from '../src/lib/db/client'
 import { listarVisitas } from '../src/lib/visita/service'
-import { assinaturas, empresas, fotos, visitas } from '../src/lib/db/schema'
+import { assinaturas, empresas, fotos, usuarios, visitas } from '../src/lib/db/schema'
 
 beforeEach(() => {
   mocks.salvarFoto.mockReset()
@@ -32,6 +34,48 @@ const base = {
 }
 
 describe('sincronização', () => {
+  it('rejeita lote com campo extra, sem inserir visitas e com 400', async () => {
+    const emailPermitidoOriginal = process.env.EMAIL_PERMITIDO
+    process.env.EMAIL_PERMITIDO = 'macedoartur1250@gmail.com'
+    try {
+      setBancoAtivo(await criarBancoTeste())
+      const [empresa] = await db.insert(empresas).values({ nome: 'Empresa A' }).returning()
+      const [usuario] = await db
+        .insert(usuarios)
+        .values({ empresaId: empresa.id, email: 'macedoartur1250@gmail.com' })
+        .returning()
+      const token = await criarSessao(usuario.id, empresa.id)
+
+      // Espelha o `metadado` JSON enviado pelo aparelho, com um campo extra
+      // injetado (tentativa de definir o tenant pelo cliente).
+      const req = new Request('http://localhost/api/v1/visitas/sync', {
+        method: 'POST',
+        headers: {
+          cookie: `${COOKIE_SESSAO}=${token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify([
+          {
+            clientId: base.clientId,
+            dados: base.dados,
+            capturadoEm: base.capturadoEm.toISOString(),
+            empresaId: empresa.id,
+          },
+        ]),
+      })
+
+      const resposta = await postSync(req)
+      expect(resposta.status).toBe(400)
+      expect(await db.select().from(visitas)).toHaveLength(0)
+    } finally {
+      if (emailPermitidoOriginal === undefined) {
+        delete process.env.EMAIL_PERMITIDO
+      } else {
+        process.env.EMAIL_PERMITIDO = emailPermitidoOriginal
+      }
+    }
+  })
+
   it('é idempotente, preserva capturado_em e devolve o token nas duplicatas', async () => {
     setBancoAtivo(await criarBancoTeste())
     const [empresa] = await db.insert(empresas).values({ nome: 'Empresa A' }).returning()
