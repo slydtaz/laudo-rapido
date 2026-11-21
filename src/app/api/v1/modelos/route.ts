@@ -1,11 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { lerSessao } from '@/lib/auth/session'
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { db } from '@/lib/db/client'
 import { modelosVisita } from '@/lib/db/schema'
-
-const ERRO_SESSAO = { erro: 'Sessão inválida ou expirada.' }
 
 const criarModeloSchema = z.object({
   nome: z.string().min(1),
@@ -13,23 +11,21 @@ const criarModeloSchema = z.object({
 })
 
 export async function GET(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   const modelos = await db
     .select()
     .from(modelosVisita)
-    .where(eq(modelosVisita.empresaId, sessao.empresaId))
+    .where(eq(modelosVisita.empresaId, acesso.empresaId))
   return Response.json({ modelos })
 }
 
 export async function POST(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   let corpo: unknown
   try {
@@ -47,7 +43,7 @@ export async function POST(req: Request) {
   const [modelo] = await db
     .insert(modelosVisita)
     .values({
-      empresaId: sessao.empresaId,
+      empresaId: acesso.empresaId,
       nome: dados.data.nome,
       campos: dados.data.campos,
     })

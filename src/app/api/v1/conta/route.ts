@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { atualizarNome, lerPerfil } from '@/lib/auth/conta'
-import { lerSessao } from '@/lib/auth/session'
 
 const esquema = z.object({
   nome: z.string().trim().min(1),
@@ -9,11 +9,11 @@ const esquema = z.object({
 })
 
 export async function GET(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json({ erro: 'Sessão inválida ou expirada.' }, { status: 401 })
-  }
-  const perfil = await lerPerfil(sessao.usuarioId)
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
+
+  const perfil = await lerPerfil(acesso.usuarioId)
   if (!perfil) {
     return Response.json({ erro: 'Conta não encontrada.' }, { status: 404 })
   }
@@ -21,10 +21,9 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json({ erro: 'Sessão inválida ou expirada.' }, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   let corpo: unknown
   try {
@@ -37,6 +36,6 @@ export async function PATCH(req: Request) {
     return Response.json({ erro: 'Informe nome e empresa.' }, { status: 400 })
   }
 
-  await atualizarNome(sessao.usuarioId, dados.data.nome, dados.data.empresa)
+  await atualizarNome(acesso.usuarioId, dados.data.nome, dados.data.empresa)
   return Response.json({ ok: true })
 }

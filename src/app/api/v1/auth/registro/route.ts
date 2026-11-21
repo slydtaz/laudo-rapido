@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { criarContaComSenha } from '@/lib/auth/conta'
 
 const esquemaRegistro = z.object({
@@ -10,6 +11,11 @@ const esquemaRegistro = z.object({
 })
 
 export async function POST(req: Request) {
+  // /registro permanece bloqueado na vitrine: só uma sessão já autorizada pela
+  // allowlist pode criar outra conta. Sem cookie → 401; e-mail negado → 403.
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+
   let corpo: unknown
   try {
     corpo = await req.json()
@@ -22,12 +28,12 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, erro: 'Dados de cadastro inválidos.' }, { status: 400 })
   }
 
-  const resultado = await criarContaComSenha(dados.data)
-  if (!resultado.ok) {
-    return Response.json({ ok: false, erro: resultado.erro }, { status: 400 })
+  const conta = await criarContaComSenha(dados.data)
+  if (!conta.ok) {
+    return Response.json({ ok: false, erro: conta.erro }, { status: 400 })
   }
 
-  const demo = resultado.envio.modo === 'demo' ? resultado.envio : null
+  const demo = conta.envio.modo === 'demo' ? conta.envio : null
   return Response.json(
     {
       ok: true,

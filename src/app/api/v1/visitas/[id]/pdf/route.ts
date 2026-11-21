@@ -1,19 +1,18 @@
 import { eq } from 'drizzle-orm'
 
-import { lerSessao } from '@/lib/auth/session'
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { db } from '@/lib/db/client'
 import { assinaturas, empresas, fotos, visitas } from '@/lib/db/schema'
 import { gerarPdf } from '@/lib/pdf/laudo'
-import { ERRO_SESSAO, visitaDoTenant } from '@/lib/visita/acesso'
+import { visitaDoTenant } from '@/lib/visita/acesso'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   const { id } = await params
-  if (!(await visitaDoTenant(id, sessao.empresaId))) {
+  if (!(await visitaDoTenant(id, acesso.empresaId))) {
     return Response.json({ erro: 'Visita não encontrada.' }, { status: 404 })
   }
 
@@ -28,7 +27,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     db
       .select({ nome: empresas.nome })
       .from(empresas)
-      .where(eq(empresas.id, sessao.empresaId))
+      .where(eq(empresas.id, acesso.empresaId))
       .limit(1),
   ])
 

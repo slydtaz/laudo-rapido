@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { trocarSenha } from '@/lib/auth/conta'
-import { extrairTokenCookie, lerSessao } from '@/lib/auth/session'
+import { extrairTokenCookie } from '@/lib/auth/session'
 
 const esquema = z.object({
   senhaAtual: z.string().nullable().optional(),
@@ -9,10 +10,9 @@ const esquema = z.object({
 })
 
 export async function POST(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json({ erro: 'Sessão inválida ou expirada.' }, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   let corpo: unknown
   try {
@@ -28,14 +28,14 @@ export async function POST(req: Request) {
     )
   }
 
-  const resultado = await trocarSenha(
-    sessao.usuarioId,
+  const troca = await trocarSenha(
+    acesso.usuarioId,
     dados.data.senhaAtual ?? null,
     dados.data.senhaNova,
     extrairTokenCookie(req),
   )
-  if (!resultado.ok) {
-    return Response.json({ erro: resultado.erro }, { status: 400 })
+  if (!troca.ok) {
+    return Response.json({ erro: troca.erro }, { status: 400 })
   }
   return Response.json({ ok: true })
 }

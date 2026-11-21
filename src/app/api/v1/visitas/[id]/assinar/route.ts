@@ -1,23 +1,22 @@
 import { z } from 'zod'
 
-import { lerSessao } from '@/lib/auth/session'
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { db } from '@/lib/db/client'
 import { assinaturas } from '@/lib/db/schema'
 import { extrairDataUrl, normalizarAssinatura, salvarAssinatura } from '@/lib/storage/client'
-import { ERRO_SESSAO, visitaDoTenant } from '@/lib/visita/acesso'
+import { visitaDoTenant } from '@/lib/visita/acesso'
 
 const assinaturaSchema = z.object({
   dataUrl: z.string().min(1),
 })
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   const { id } = await params
-  if (!(await visitaDoTenant(id, sessao.empresaId))) {
+  if (!(await visitaDoTenant(id, acesso.empresaId))) {
     return Response.json({ erro: 'Visita não encontrada.' }, { status: 404 })
   }
 

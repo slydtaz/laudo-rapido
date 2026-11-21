@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { PATCH as salvarConta, GET as lerConta } from '../src/app/api/v1/conta/route'
 import { POST as trocarSenhaRota } from '../src/app/api/v1/conta/senha/route'
@@ -13,7 +13,20 @@ import { COOKIE_SESSAO, criarSessao } from '../src/lib/auth/session'
 import { criarBancoTeste, db, setBancoAtivo } from '../src/lib/db/client'
 import { empresas, usuarios } from '../src/lib/db/schema'
 
-afterEach(() => setBancoAtivo(undefined))
+const EMAIL_PERMITIDO_ORIGINAL = process.env.EMAIL_PERMITIDO
+
+beforeEach(() => {
+  process.env.EMAIL_PERMITIDO = 'perfil@exemplo.local'
+})
+
+afterEach(() => {
+  setBancoAtivo(undefined)
+  if (EMAIL_PERMITIDO_ORIGINAL === undefined) {
+    delete process.env.EMAIL_PERMITIDO
+  } else {
+    process.env.EMAIL_PERMITIDO = EMAIL_PERMITIDO_ORIGINAL
+  }
+})
 
 async function base(opcoes: { comSenha?: boolean; verificado?: boolean } = {}) {
   setBancoAtivo(await criarBancoTeste())

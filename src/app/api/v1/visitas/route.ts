@@ -1,24 +1,20 @@
-import { lerSessao } from '@/lib/auth/session'
+import { acessoOuErro } from '@/lib/auth/acesso'
 import { visitaDto } from '@/lib/visita/dto'
 import { criarVisita, criarVisitaSchema, listarVisitas } from '@/lib/visita/service'
 
-const ERRO_SESSAO = { erro: 'Sessão inválida ou expirada.' }
-
 export async function GET(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
-  const visitas = await listarVisitas(sessao.empresaId)
+  const visitas = await listarVisitas(acesso.empresaId)
   return Response.json({ visitas: visitas.map(visitaDto) })
 }
 
 export async function POST(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   let corpo: unknown
   try {
@@ -33,6 +29,6 @@ export async function POST(req: Request) {
   }
 
   // RF-08: o tenant vem da sessão; qualquer empresaId no corpo é ignorado.
-  const visita = await criarVisita(dados.data, sessao.empresaId)
+  const visita = await criarVisita(dados.data, acesso.empresaId)
   return Response.json({ visita: visitaDto(visita) }, { status: 201 })
 }

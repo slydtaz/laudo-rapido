@@ -5,7 +5,7 @@ import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import FormularioLogin from '@/app/(publico)/login/FormularioLogin'
-import PaginaRegistro from '@/app/registro/page'
+import FormularioRegistro from '@/app/registro/FormularioRegistro'
 import BotaoGoogle from '@/components/BotaoGoogle'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
@@ -49,7 +49,7 @@ describe('botão Continuar com Google', () => {
     expect(screen.getByText('ou')).toBeTruthy()
     login.unmount()
 
-    render(comProvedores(createElement(PaginaRegistro)))
+    render(comProvedores(createElement(FormularioRegistro)))
     expect(screen.getByRole('link', { name: 'Continuar com Google' })).toBeTruthy()
     expect(screen.getByText('ou')).toBeTruthy()
   })

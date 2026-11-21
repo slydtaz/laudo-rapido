@@ -1,8 +1,7 @@
 import { z } from 'zod'
 
-import { lerSessao } from '@/lib/auth/session'
+import { acessoOuErro } from '@/lib/auth/acesso'
 import type { VisitaLocal } from '@/lib/offline/queue'
-import { ERRO_SESSAO } from '@/lib/visita/acesso'
 import { criarVisitaSchema } from '@/lib/visita/service'
 import { sincronizarLote } from '@/lib/visita/sync'
 
@@ -53,10 +52,9 @@ async function itensDoMultipart(req: Request): Promise<VisitaLocal[]> {
 }
 
 export async function POST(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
 
   let itens: VisitaLocal[]
   try {
@@ -67,12 +65,12 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'Lote de visitas inválido.' }, { status: 400 })
   }
 
-  let resultado: Awaited<ReturnType<typeof sincronizarLote>>
+  let sincronizacao: Awaited<ReturnType<typeof sincronizarLote>>
   try {
-    resultado = await sincronizarLote(itens, sessao.empresaId)
+    sincronizacao = await sincronizarLote(itens, acesso.empresaId)
   } catch {
     return Response.json({ erro: 'Falha ao sincronizar o lote de visitas.' }, { status: 502 })
   }
 
-  return Response.json(resultado)
+  return Response.json(sincronizacao)
 }

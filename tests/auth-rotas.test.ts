@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { POST as registrar } from '../src/app/api/v1/auth/registro/route'
 import { POST as reenviar } from '../src/app/api/v1/auth/verificar/reenviar/route'
@@ -7,18 +7,45 @@ import { POST as verificar } from '../src/app/api/v1/auth/verificar/route'
 import { POST as esqueci } from '../src/app/api/v1/auth/senha/esqueci/route'
 import { POST as redefinir } from '../src/app/api/v1/auth/senha/redefinir/route'
 import { hashSenha, verificarSenha } from '../src/lib/auth/password'
+import { criarSessao } from '../src/lib/auth/session'
 import { criarToken } from '../src/lib/auth/tokens'
 import { criarBancoTeste, db, setBancoAtivo } from '../src/lib/db/client'
 import { empresas, usuarios } from '../src/lib/db/schema'
 
-afterEach(() => setBancoAtivo(undefined))
+const EMAIL_PERMITIDO_ORIGINAL = process.env.EMAIL_PERMITIDO
 
-function post(corpo: unknown): Request {
+beforeEach(() => {
+  process.env.EMAIL_PERMITIDO = 'macedoartur1250@gmail.com'
+})
+
+afterEach(() => {
+  setBancoAtivo(undefined)
+  if (EMAIL_PERMITIDO_ORIGINAL === undefined) {
+    delete process.env.EMAIL_PERMITIDO
+  } else {
+    process.env.EMAIL_PERMITIDO = EMAIL_PERMITIDO_ORIGINAL
+  }
+})
+
+function post(corpo: unknown, token?: string): Request {
   return new Request('http://localhost/api/', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(token ? { cookie: `sessao=${token}` } : {}),
+    },
     body: JSON.stringify(corpo),
   })
+}
+
+/** Sessão já autorizada: /registro permanece bloqueado para o público. */
+async function sessaoPermitida(): Promise<string> {
+  const [empresa] = await db.insert(empresas).values({ nome: 'Empresa da allowlist' }).returning()
+  const [usuario] = await db
+    .insert(usuarios)
+    .values({ empresaId: empresa.id, email: 'macedoartur1250@gmail.com' })
+    .returning()
+  return criarSessao(usuario.id, empresa.id)
 }
 
 function todaResposta(resposta: Response) {
@@ -43,8 +70,9 @@ describe('rotas de registro, verificação e recuperação', () => {
   it('registra sem criar sessão e devolve o link no modo demo', async () => {
     setBancoAtivo(await criarBancoTeste())
 
+    const token = await sessaoPermitida()
     const resposta = await registrar(
-      post({ nome: 'Ana', empresa: 'Climatizar', email: 'ana@exemplo.com', senha: 'senha-forte-123' }),
+      post({ nome: 'Ana', empresa: 'Climatizar', email: 'ana@exemplo.com', senha: 'senha-forte-123' }, token),
     )
     const { status, cookie, corpo } = todaResposta(resposta)
 
@@ -60,12 +88,13 @@ describe('rotas de registro, verificação e recuperação', () => {
   it('devolve 400 para corpo inválido e para e-mail duplicado', async () => {
     setBancoAtivo(await criarBancoTeste())
     const corpo = { nome: 'Ana', empresa: 'Climatizar', email: 'ana@exemplo.com', senha: 'senha-forte-123' }
-    await registrar(post(corpo))
+    const token = await sessaoPermitida()
+    await registrar(post(corpo, token))
 
-    await expect(registrar(post({ ...corpo, email: 'invalido' })).then((r) => r.status)).resolves.toBe(400)
-    await expect(registrar(post({ ...corpo, senha: 'curta' })).then((r) => r.status)).resolves.toBe(400)
-    await expect(registrar(post({ ...corpo, email: 'ANA@exemplo.com' })).then((r) => r.status)).resolves.toBe(400)
-    expect(await db.select().from(empresas)).toHaveLength(1)
+    await expect(registrar(post({ ...corpo, email: 'invalido' }, token)).then((r) => r.status)).resolves.toBe(400)
+    await expect(registrar(post({ ...corpo, senha: 'curta' }, token)).then((r) => r.status)).resolves.toBe(400)
+    await expect(registrar(post({ ...corpo, email: 'ANA@exemplo.com' }, token)).then((r) => r.status)).resolves.toBe(400)
+    expect(await db.select().from(empresas)).toHaveLength(2)
   })
 
   it('verifica o e-mail e recusa token inválido', async () => {

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GET as listaDemoLinks } from '@/app/api/v1/auth/demo-links/route'
 import PaginaEsqueciSenha from '@/app/(publico)/esqueci-senha/page'
 import PaginaRedefinirSenha from '@/app/(publico)/redefinir-senha/page'
-import PaginaRegistro from '@/app/registro/page'
+import FormularioRegistro from '@/app/registro/FormularioRegistro'
 import PaginaVerificarEmail from '@/app/(publico)/verificar-email/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 import ToastProvider from '@/components/ToastProvider'
@@ -42,7 +42,7 @@ describe('telas de registro e recuperação', () => {
     )
     vi.stubGlobal('fetch', buscar)
 
-    render(comProvedores(createElement(PaginaRegistro)))
+    render(comProvedores(createElement(FormularioRegistro)))
 
     expect(screen.getByRole('link', { name: 'Entrar' }).getAttribute('href')).toBe('/login')
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana' } })

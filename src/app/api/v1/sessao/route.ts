@@ -1,5 +1,4 @@
-import { lerSessao } from '@/lib/auth/session'
-import { ERRO_SESSAO } from '@/lib/visita/acesso'
+import { acessoOuErro } from '@/lib/auth/acesso'
 
 /**
  * Devolve SOMENTE o tenant da sessão atual. O cliente usa este id para
@@ -8,9 +7,9 @@ import { ERRO_SESSAO } from '@/lib/visita/acesso'
  * derivado da sessão no servidor — nunca recebido do cliente.
  */
 export async function GET(req: Request) {
-  const sessao = await lerSessao(req)
-  if (!sessao) {
-    return Response.json(ERRO_SESSAO, { status: 401 })
-  }
-  return Response.json({ empresaId: sessao.empresaId })
+  const resultado = await acessoOuErro(req)
+  if ('resposta' in resultado) return resultado.resposta
+  const { acesso } = resultado
+
+  return Response.json({ empresaId: acesso.empresaId })
 }
