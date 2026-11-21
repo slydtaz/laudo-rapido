@@ -1,4 +1,5 @@
 import {
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -107,6 +108,16 @@ export const tokensAuth = pgTable('tokens_auth', {
   expiraEm: timestamp('expira_em', { mode: 'date' }).notNull(),
   usadoEm: timestamp('usado_em', { mode: 'date' }),
   criadoEm: timestamp('criado_em', { mode: 'date' }).defaultNow(),
+})
+
+/**
+ * Tentativas por chave opaca (IP + e-mail) dentro de uma janela curta.
+ * Sem FKs: é um contador de acesso, não um vínculo do domínio.
+ */
+export const tentativasLogin = pgTable('tentativas_login', {
+  chave: text('chave').primaryKey(),
+  tentativas: integer('tentativas').notNull().default(0),
+  criadoEm: timestamp('criado_em', { mode: 'date' }).notNull().defaultNow(),
 })
 
 export type Empresa = typeof empresas.$inferSelect

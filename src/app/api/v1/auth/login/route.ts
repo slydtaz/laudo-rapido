@@ -3,6 +3,12 @@ import { z } from 'zod'
 
 import { definirCookieSessao } from '@/lib/auth/cookie'
 import { verificarSenha } from '@/lib/auth/password'
+import {
+  MENSAGEM_BLOQUEIO,
+  chaveTentativa,
+  ipDaRequisicao,
+  registrarTentativa,
+} from '@/lib/auth/rate-limit'
 import { criarSessao } from '@/lib/auth/session'
 import { db } from '@/lib/db/client'
 import { usuarios } from '@/lib/db/schema'
@@ -23,6 +29,14 @@ export async function POST(req: Request) {
   const dados = esquemaLogin.safeParse(corpo)
   if (!dados.success) {
     return Response.json({ erro: 'E-mail ou senha inválidos.' }, { status: 400 })
+  }
+
+  // Limite antes da verificação Argon2: barras também o abuso de CPU.
+  const { bloqueado } = await registrarTentativa(
+    chaveTentativa(ipDaRequisicao(req), dados.data.email),
+  )
+  if (bloqueado) {
+    return Response.json({ erro: MENSAGEM_BLOQUEIO }, { status: 429 })
   }
 
   const [usuario] = await db

@@ -20,7 +20,12 @@ describe('runner de migrações', () => {
     const banco = drizzle(pglite)
 
     const arquivos = await listarArquivosMigracao()
-    expect(arquivos).toEqual(['0001_init.sql', '0002_sessoes.sql', '0003_auth.sql'])
+    expect(arquivos).toEqual([
+      '0001_init.sql',
+      '0002_sessoes.sql',
+      '0003_auth.sql',
+      '0004_tentativas_login.sql',
+    ])
 
     const executarSql = (comando: string) => pglite.exec(comando)
     await aplicarMigracoes(banco, executarSql)
@@ -40,6 +45,7 @@ describe('runner de migrações', () => {
         'assinaturas',
         'sessoes',
         'tokens_auth',
+        'tentativas_login',
         TABELA_CONTROLE_MIGRACOES,
       ]),
     )

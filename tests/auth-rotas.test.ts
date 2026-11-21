@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { POST as login } from '../src/app/api/v1/auth/login/route'
 import { POST as registrar } from '../src/app/api/v1/auth/registro/route'
 import { POST as reenviar } from '../src/app/api/v1/auth/verificar/reenviar/route'
 import { POST as verificar } from '../src/app/api/v1/auth/verificar/route'
@@ -27,12 +28,14 @@ afterEach(() => {
   }
 })
 
-function post(corpo: unknown, token?: string): Request {
+function post(corpo: unknown, token?: string, ip?: string): Request {
   return new Request('http://localhost/api/', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       ...(token ? { cookie: `sessao=${token}` } : {}),
+      // O proxy envia uma lista; a rota deve usar apenas o primeiro valor.
+      ...(ip ? { 'x-forwarded-for': `${ip}, 10.0.0.1` } : {}),
     },
     body: JSON.stringify(corpo),
   })
@@ -144,5 +147,52 @@ describe('rotas de registro, verificação e recuperação', () => {
     await expect(
       redefinir(post({ token, senha: 'outra-senha-123' })).then((r) => r.status),
     ).resolves.toBe(400)
+  })
+})
+
+describe('limite de tentativas nas rotas públicas de autenticação', () => {
+  it('devolve 429 na 10ª tentativa de login com senha errada', async () => {
+    setBancoAtivo(await criarBancoTeste())
+    const { email } = await usuarioExistente()
+    const ip = '203.0.113.10'
+
+    const statuses: number[] = []
+    for (let tentativa = 0; tentativa < 10; tentativa++) {
+      const resposta = await login(post({ email, senha: 'senha-errada' }, undefined, ip))
+      statuses.push(resposta.status)
+    }
+
+    expect(statuses).toEqual([...Array(9).fill(401), 429])
+  })
+
+  it('compartilha o limite entre login e esqueci-senha para o mesmo IP e e-mail', async () => {
+    setBancoAtivo(await criarBancoTeste())
+    const { email } = await usuarioExistente()
+    const ip = '203.0.113.11'
+
+    for (let tentativa = 0; tentativa < 9; tentativa++) {
+      expect(
+        (await login(post({ email, senha: 'senha-errada' }, undefined, ip))).status,
+      ).toBe(401)
+    }
+
+    const bloqueada = await esqueci(post({ email }, undefined, ip))
+    expect(bloqueada.status).toBe(429)
+    expect(await bloqueada.json()).toEqual({
+      erro: 'Muitas tentativas. Tente novamente em instantes.',
+    })
+  })
+
+  it('não bloqueia outra chave quando uma já atingiu o limite', async () => {
+    setBancoAtivo(await criarBancoTeste())
+    const { email } = await usuarioExistente()
+
+    for (let tentativa = 0; tentativa < 10; tentativa++) {
+      await login(post({ email, senha: 'senha-errada' }, undefined, '203.0.113.12'))
+    }
+
+    const outra = await esqueci(post({ email }, undefined, '203.0.113.13'))
+    expect(outra.status).toBe(202)
+    expect(await outra.json()).toEqual({ ok: true })
   })
 })
