@@ -24,6 +24,9 @@ const LIBERADAS = [
   '/api/v1/auth/google',
   '/api/v1/auth/google/callback',
   '/api/v1/auth/logout',
+  '/privacidade',
+  '/termos',
+  '/cookies',
 ]
 
 function bateNoMatcher(caminho: string) {

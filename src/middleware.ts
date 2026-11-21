@@ -2,9 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 /**
  * Únicas rotas acessíveis sem sessão: login (senha e Google), recuperação,
- * verificação, health e as telas de bloqueio. `/registro`, `/planos`, `/o/:token`
- * e todo o resto ficam protegidos por padrão. A allowlist não roda aqui: o Edge
- * só decide se há cookie; a validação real acontece nos layouts e nas rotas.
+ * verificação, health, páginas legais (/privacidade, /termos, /cookies) e as
+ * telas de bloqueio. `/registro`, `/planos`, `/o/:token` e todo o resto ficam
+ * protegidos por padrão. A allowlist não roda aqui: o Edge só decide se há
+ * cookie; a validação real acontece nos layouts e nas rotas.
  */
 export const ROTAS_PUBLICAS = [
   '/login',
@@ -22,6 +23,9 @@ export const ROTAS_PUBLICAS = [
   '/api/v1/auth/google',
   '/api/v1/auth/google/callback',
   '/api/v1/auth/logout',
+  '/privacidade',
+  '/termos',
+  '/cookies',
 ]
 
 /** Espelha ERRO_ACESSO sem importar módulos de banco para o runtime do Edge. */
