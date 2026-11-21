@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { createElement } from 'react'
+import { createElement, StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { GET as listaDemoLinks } from '@/app/api/v1/auth/demo-links/route'
@@ -87,6 +87,20 @@ describe('telas de registro e recuperação', () => {
     const corpo = JSON.parse((buscar.mock.calls[0][1] as RequestInit).body as string)
     expect(corpo).toEqual({ token: 'tok-verificar' })
     expect(await screen.findByText(/E-mail verificado/)).toBeTruthy()
+  })
+
+  it('/verificar-email consome o token uma única vez no StrictMode', async () => {
+    window.history.pushState({}, '', '/verificar-email?token=tok-unico')
+    const buscar = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ ok: true }))
+      .mockResolvedValueOnce(Response.json({ erro: 'Link inválido' }, { status: 400 }))
+    vi.stubGlobal('fetch', buscar)
+
+    render(createElement(StrictMode, null, comProvedores(createElement(PaginaVerificarEmail))))
+
+    await waitFor(() => expect(screen.getByText(/E-mail verificado/)).toBeTruthy())
+    expect(buscar).toHaveBeenCalledTimes(1)
   })
 
   it('/redefinir-senha envia o token da URL e a nova senha', async () => {

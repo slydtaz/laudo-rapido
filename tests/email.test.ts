@@ -65,4 +65,22 @@ describe('remetente de links de autenticação', () => {
       enviarLink({ tipo: 'verificar_email', token: 'tok-789', email: 'a@b.com' }),
     ).resolves.toEqual({ modo: 'silencioso' })
   })
+
+  it('mantém a caixa demo visível depois que o módulo é recarregado', async () => {
+    process.env.NODE_ENV = 'test'
+    delete process.env.EMAIL_WEBHOOK_URL
+
+    await enviarLink({
+      tipo: 'redefinir_senha',
+      token: 'tok-compartilhado-entre-bundles',
+      email: 'caixa@exemplo.local',
+    })
+
+    // Cada route handler do Next.js em dev pode receber uma instância própria
+    // deste módulo. A caixa precisa sobreviver ao recarregamento para que um
+    // link emitido por uma rota apareça na rota que lista os links.
+    vi.resetModules()
+    const moduloRecarregado = await import('../src/lib/auth/email')
+    expect(moduloRecarregado.listarLinksDemo().some((item) => item.token === 'tok-compartilhado-entre-bundles')).toBe(true)
+  })
 })

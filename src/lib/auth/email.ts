@@ -24,10 +24,21 @@ export type LinkDemo = {
  * Caixa de entrada do modo demo: somente em memória e somente fora de produção.
  * Não recebe e-mail como parâmetro, então não revela se uma conta existe.
  */
-const caixaDemo: LinkDemo[] = []
+type GlobalComCaixa = typeof globalThis & { __laudoRapidoCaixaDemo?: LinkDemo[] }
+
+/**
+ * Cada route handler compilado pelo Next.js em dev pode carregar sua própria
+ * instância deste módulo. Guardar a caixa no `globalThis` mantém um único
+ * buffer por processo, então um link emitido por uma rota aparece na listagem.
+ */
+function caixaDemo(): LinkDemo[] {
+  const global = globalThis as GlobalComCaixa
+  global.__laudoRapidoCaixaDemo ??= []
+  return global.__laudoRapidoCaixaDemo
+}
 
 export function listarLinksDemo(): LinkDemo[] {
-  return caixaDemo.slice(-10).reverse()
+  return caixaDemo().slice(-10).reverse()
 }
 
 export function montarLink(tipo: TipoToken, token: string): string {
@@ -65,15 +76,16 @@ export async function enviarLink(link: LinkEmail): Promise<ResultadoEnvio> {
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    caixaDemo.push({
+    const caixa = caixaDemo()
+    caixa.push({
       tipo: link.tipo,
       email: link.email,
       link: url,
       token: link.token,
       emitidoEm: new Date().toISOString(),
     })
-    if (caixaDemo.length > 50) {
-      caixaDemo.shift()
+    if (caixa.length > 50) {
+      caixa.shift()
     }
     return { modo: 'demo', link: url, token: link.token }
   }

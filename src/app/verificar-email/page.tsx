@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 
 import { useToast } from '@/components/ToastProvider'
 import { useT } from '@/lib/i18n/useT'
@@ -13,8 +13,15 @@ export default function PaginaVerificarEmail() {
   const [estado, setEstado] = useState<'carregando' | 'ok' | 'erro' | 'sem-token'>('carregando')
   const [email, setEmail] = useState('')
   const [reenviado, setReenviado] = useState(false)
+  // No StrictMode de desenvolvimento o efeito monta duas vezes; um token de
+  // uso único não pode ser consumido duas vezes sob pena de virar "erro".
+  const processado = useRef(false)
 
   useEffect(() => {
+    if (processado.current) {
+      return
+    }
+    processado.current = true
     const token = new URLSearchParams(window.location.search).get('token')
     if (!token) {
       setEstado('sem-token')
