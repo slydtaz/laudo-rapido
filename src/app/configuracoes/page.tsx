@@ -192,9 +192,14 @@ export default function ConfiguracoesPage() {
             <p className="max-w-md text-sm leading-relaxed text-muted">
               {t('configSairDica')}
             </p>
-            <button type="button" onClick={sair} className="btn btn-soft min-h-11">
-              {t('configSair')}
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/conta" className="link inline-flex min-h-11 items-center">
+                {t('contaLinkConfig')}
+              </Link>
+              <button type="button" onClick={sair} className="btn btn-soft min-h-11">
+                {t('configSair')}
+              </button>
+            </div>
           </div>
         </Secao>
       </section>

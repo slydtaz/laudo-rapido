@@ -1,9 +1,9 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 
 import { db } from '../db/client'
 import { empresas, sessoes, usuarios } from '../db/schema'
 import { enviarLink, type ResultadoEnvio } from './email'
-import { hashSenha } from './password'
+import { hashSenha, verificarSenha } from './password'
 import {
   consumirToken,
   criarToken,
@@ -130,5 +130,96 @@ export async function redefinirSenha(
     .set({ senhaHash: await hashSenha(senhaNova) })
     .where(eq(usuarios.id, usuarioId))
   await db.delete(sessoes).where(eq(sessoes.usuarioId, usuarioId))
+  return { ok: true }
+}
+
+/** Dados não sensíveis exibidos em `/conta`. */
+export type Perfil = {
+  nome: string
+  email: string
+  empresa: string
+  verificado: boolean
+  provedor: 'senha' | 'google'
+  criadoEm: string
+}
+
+export async function lerPerfil(usuarioId: string): Promise<Perfil | null> {
+  const [linha] = await db
+    .select({
+      nome: usuarios.nome,
+      email: usuarios.email,
+      empresa: empresas.nome,
+      verificadoEm: usuarios.emailVerificadoEm,
+      senhaHash: usuarios.senhaHash,
+      criadoEm: usuarios.criadoEm,
+    })
+    .from(usuarios)
+    .innerJoin(empresas, eq(usuarios.empresaId, empresas.id))
+    .where(eq(usuarios.id, usuarioId))
+    .limit(1)
+
+  if (!linha) {
+    return null
+  }
+  return {
+    nome: linha.nome ?? '',
+    email: linha.email,
+    empresa: linha.empresa,
+    verificado: linha.verificadoEm !== null,
+    provedor: linha.senhaHash ? 'senha' : 'google',
+    criadoEm: (linha.criadoEm ?? new Date()).toISOString(),
+  }
+}
+
+/** Atualiza o nome exibido do técnico e da empresa. */
+export async function atualizarNome(
+  usuarioId: string,
+  nome: string,
+  empresaNome: string,
+): Promise<void> {
+  const [usuario] = await db
+    .select({ empresaId: usuarios.empresaId })
+    .from(usuarios)
+    .where(eq(usuarios.id, usuarioId))
+    .limit(1)
+  if (!usuario) {
+    return
+  }
+  await db.update(usuarios).set({ nome }).where(eq(usuarios.id, usuarioId))
+  await db.update(empresas).set({ nome: empresaNome }).where(eq(empresas.id, usuario.empresaId))
+}
+
+/**
+ * Conta com senha exige a senha atual; conta Google exige e-mail verificado.
+ * Todas as outras sessões são invalidadas, mantendo apenas a atual.
+ */
+export async function trocarSenha(
+  usuarioId: string,
+  senhaAtual: string | null,
+  senhaNova: string,
+  tokenAtual: string | null,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (senhaNova.length < 8) {
+    return { ok: false, erro: SENHA_CURTA }
+  }
+  const [usuario] = await db.select().from(usuarios).where(eq(usuarios.id, usuarioId)).limit(1)
+  if (!usuario) {
+    return { ok: false, erro: 'Conta não encontrada.' }
+  }
+  if (usuario.senhaHash) {
+    if (!senhaAtual || !(await verificarSenha(senhaAtual, usuario.senhaHash))) {
+      return { ok: false, erro: 'Senha atual incorreta.' }
+    }
+  } else if (!usuario.emailVerificadoEm) {
+    return { ok: false, erro: 'Verifique seu e-mail antes de criar uma senha.' }
+  }
+
+  await db
+    .update(usuarios)
+    .set({ senhaHash: await hashSenha(senhaNova) })
+    .where(eq(usuarios.id, usuarioId))
+  await db
+    .delete(sessoes)
+    .where(and(eq(sessoes.usuarioId, usuarioId), ne(sessoes.id, tokenAtual ?? '')))
   return { ok: true }
 }
