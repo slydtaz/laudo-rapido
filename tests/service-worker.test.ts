@@ -243,6 +243,7 @@ describe('service worker', () => {
         'laudo-rapido-v2-shell',
         'laudo-rapido-v3-shell',
         'laudo-rapido-v4-shell',
+        'laudo-rapido-v5-shell',
         'outro-app',
       ],
     })
@@ -257,13 +258,34 @@ describe('service worker', () => {
 
     expect(caches.delete).toHaveBeenCalledWith('laudo-rapido-v2-shell')
     expect(caches.delete).toHaveBeenCalledWith('laudo-rapido-v3-shell')
-    expect(caches.delete).not.toHaveBeenCalledWith('laudo-rapido-v4-shell')
+    expect(caches.delete).toHaveBeenCalledWith('laudo-rapido-v4-shell')
+    expect(caches.delete).not.toHaveBeenCalledWith('laudo-rapido-v5-shell')
     expect(caches.delete).not.toHaveBeenCalledWith('outro-app')
   })
 
-  it('nunca apaga o IndexedDB das visitas e usa a versão v4', () => {
+  it('nunca apaga o IndexedDB das visitas e usa a versão v5', () => {
     const codigo = readFileSync(resolve(process.cwd(), 'public/sw.js'), 'utf8')
-    expect(codigo).toContain('laudo-rapido-v4')
+    expect(codigo).toContain('laudo-rapido-v5')
     expect(codigo).not.toContain('indexedDB.deleteDatabase')
+  })
+
+  it('não ativa sozinho no install; espera SKIP_WAITING do cliente', async () => {
+    const { manipuladores, self } = carregarServiceWorker({
+      buscar: vi.fn(async () => new RespostaFalsa('')),
+    })
+
+    let conclusao: Promise<unknown> | undefined
+    manipuladores.install?.({
+      waitUntil: (promessa) => {
+        conclusao = promessa
+      },
+    })
+    await conclusao
+
+    expect(self.skipWaiting).not.toHaveBeenCalled()
+
+    const waitUntil = vi.fn()
+    manipuladores.message?.({ data: { type: 'SKIP_WAITING' }, waitUntil })
+    expect(self.skipWaiting).toHaveBeenCalledTimes(1)
   })
 })

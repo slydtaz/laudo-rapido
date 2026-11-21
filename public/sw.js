@@ -1,5 +1,5 @@
 /*
- * Service worker do LaudoRápido — v4.
+ * Service worker do LaudoRápido — v5.
  *
  * Cache SOMENTE de assets estáticos e da página /offline. Nenhuma página HTML
  * de navegação entra no cache: com o gate de acesso no servidor, gravar HTML
@@ -8,8 +8,8 @@
  * O IndexedDB das visitas nunca é apagado aqui.
  */
 
-// v4: remove as páginas do app shell do cache. A purga abaixo apaga v2 e v3.
-const VERSAO = 'laudo-rapido-v4'
+// v5: ativa só após confirmação do cliente. A purga abaixo apaga v2, v3 e v4.
+const VERSAO = 'laudo-rapido-v5'
 const CACHE_SHELL = `${VERSAO}-shell`
 const SHELL = ['/offline', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']
 
@@ -30,8 +30,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_SHELL)
-      .then((cache) => cache.addAll(SHELL))
-      .then(() => self.skipWaiting()),
+      .then((cache) => cache.addAll(SHELL)),
   )
 })
 
