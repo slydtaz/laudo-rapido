@@ -62,4 +62,17 @@ Produção não usa `localhost`: a aplicação falha fechado sem `GOOGLE_REDIREC
 
 6. Se algo falhar: `vercel rollback`.
 
+## Execução em 2026-11-21
+
+Deploy de produção executado com confirmação do dono. Deployment
+`dpl_5xqrNaZFMwHU2DGbGWvQy6rnsj9D`, alias `https://laudo-rapido.vercel.app`.
+As 15 variáveis estavam presentes em Production. As migrações `0004` e `0005`
+foram aplicadas e registradas em `migracoes_aplicadas`. Suíte 47 arquivos /
+227 testes PASS; build 38/38 páginas.
+
+Smoke em produção: `/privacidade`, `/termos`, `/cookies`, `/api/health` e
+`/login` → 200; `/planos` sem sessão → 307; APIs autenticadas `/api/v1/visitas`
+e `/api/v1/configuracao` sem sessão → 403; `/api/v1/auth/google` → 307 para
+`accounts.google.com`. HTML de `/login` contém os três links legais e `Entrar`.
+
 Nenhuma cobrança, checkout ou webhook de pagamento está implementado nesta versão.
