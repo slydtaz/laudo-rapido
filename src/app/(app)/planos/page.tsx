@@ -4,44 +4,7 @@ import Link from 'next/link'
 
 import type { ChaveTexto } from '@/lib/i18n/dicionario'
 import { useT } from '@/lib/i18n/useT'
-
-type Plano = {
-  nome: ChaveTexto
-  preco: ChaveTexto
-  dica: ChaveTexto
-  itens: ChaveTexto
-  destaque?: boolean
-  semPeriodo?: boolean
-}
-
-const PLANOS: Plano[] = [
-  {
-    nome: 'planoGratuito',
-    preco: 'planoGratuitoPreco',
-    dica: 'planoGratuitoDica',
-    itens: 'planoGratuitoItens',
-  },
-  {
-    nome: 'planoPro',
-    preco: 'planoProPreco',
-    dica: 'planoProDica',
-    itens: 'planoProItens',
-    destaque: true,
-  },
-  {
-    nome: 'planoEquipe',
-    preco: 'planoEquipePreco',
-    dica: 'planoEquipeDica',
-    itens: 'planoEquipeItens',
-  },
-  {
-    nome: 'planoEmpresas',
-    preco: 'planoEmpresasPreco',
-    dica: 'planoEmpresasDica',
-    itens: 'planoEmpresasItens',
-    semPeriodo: true,
-  },
-]
+import { CATALOGO_PLANOS } from '@/lib/saas/planos'
 
 const FAQ: Array<[ChaveTexto, ChaveTexto]> = [
   ['planosFaq1P', 'planosFaq1R'],
@@ -68,9 +31,9 @@ export default function PlanosPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {PLANOS.map((plano, indice) => (
+        {CATALOGO_PLANOS.map((plano, indice) => (
           <article
-            key={plano.nome}
+            key={plano.id}
             className={`card card-lift ${['reveal', 'reveal-2', 'reveal-3', 'reveal-4'][indice]} relative flex flex-col p-5 sm:p-6 ${
               plano.destaque ? 'border-brand' : ''
             }`}

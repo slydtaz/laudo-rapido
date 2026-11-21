@@ -62,8 +62,8 @@ describe('configurações e planos', () => {
     for (const nome of ['Gratuito', 'Pro', 'Equipe', 'Enterprise']) {
       expect(screen.getByText(nome)).toBeTruthy()
     }
-    expect(screen.getByText('R$ 19,90')).toBeTruthy()
-    expect(screen.getByText('R$ 39,90')).toBeTruthy()
+    expect(screen.getByText('R$ 29,90')).toBeTruthy()
+    expect(screen.getByText('R$ 79,90')).toBeTruthy()
     expect(screen.getByText('Sob consulta')).toBeTruthy()
     expect(container.querySelector('form')).toBeNull()
     expect(container.querySelector('input')).toBeNull()
