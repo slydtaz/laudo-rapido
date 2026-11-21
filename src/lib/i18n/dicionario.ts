@@ -221,6 +221,18 @@ export const ptBR = {
   historicoSemCliente: 'Cliente não informado',
   historicoHome: 'Histórico de laudos',
   historicoHomeDica: 'Consulte e compartilhe os laudos já registrados.',
+
+  legalRodapePrivacidade: 'Privacidade',
+  legalRodapeTermos: 'Termos de Uso',
+  legalRodapeCookies: 'Cookies',
+  legalPrevalencia: 'A versão em português do Brasil prevalece em caso de divergência.',
+  loginAvisoLegal: 'O fornecimento do seu e-mail é condição de uso. Consulte os documentos:',
+  contaPrivacidadeTitulo: 'Privacidade e seus dados',
+  contaPrivacidadeTexto:
+    'Não existe exportação ou exclusão self-service hoje. Pedidos de titular devem ser enviados para macedoartur1250@gmail.com. Detalhes em:',
+  configPrivacidadeTitulo: 'Privacidade e seus dados',
+  configPrivacidadeTexto:
+    'Não existe exportação ou exclusão self-service hoje. Pedidos de titular devem ser enviados para macedoartur1250@gmail.com. Detalhes em:',
 } as const
 
 export type ChaveTexto = keyof typeof ptBR
@@ -447,6 +459,18 @@ const en: DicionarioTextos = {
   historicoSemCliente: 'Unnamed client',
   historicoHome: 'Report history',
   historicoHomeDica: 'Review and share the reports already recorded.',
+
+  legalRodapePrivacidade: 'Privacy',
+  legalRodapeTermos: 'Terms of Use',
+  legalRodapeCookies: 'Cookies',
+  legalPrevalencia: 'The Brazilian Portuguese version prevails in case of conflict.',
+  loginAvisoLegal: 'Providing your email is a condition of use. See the documents:',
+  contaPrivacidadeTitulo: 'Privacy and your data',
+  contaPrivacidadeTexto:
+    'There is no self-service export or deletion today. Data subject requests go to macedoartur1250@gmail.com. Details in:',
+  configPrivacidadeTitulo: 'Privacy and your data',
+  configPrivacidadeTexto:
+    'There is no self-service export or deletion today. Data subject requests go to macedoartur1250@gmail.com. Details in:',
 }
 
 const es: DicionarioTextos = {
@@ -670,6 +694,18 @@ const es: DicionarioTextos = {
   historicoSemCliente: 'Cliente sin nombre',
   historicoHome: 'Historial de informes',
   historicoHomeDica: 'Consulta y comparte los informes ya registrados.',
+
+  legalRodapePrivacidade: 'Privacidad',
+  legalRodapeTermos: 'Términos de Uso',
+  legalRodapeCookies: 'Cookies',
+  legalPrevalencia: 'La versión en portugués de Brasil prevalece en caso de discrepancia.',
+  loginAvisoLegal: 'Proporcionar su correo es una condición de uso. Consulte los documentos:',
+  contaPrivacidadeTitulo: 'Privacidad y sus datos',
+  contaPrivacidadeTexto:
+    'Hoy no existe exportación ni eliminación self-service. Las solicitudes del titular se envían a macedoartur1250@gmail.com. Detalles en:',
+  configPrivacidadeTitulo: 'Privacidad y sus datos',
+  configPrivacidadeTexto:
+    'Hoy no existe exportación ni eliminación self-service. Las solicitudes del titular se envían a macedoartur1250@gmail.com. Detalles en:',
 }
 
 const fr: DicionarioTextos = {
@@ -893,6 +929,18 @@ const fr: DicionarioTextos = {
   historicoSemCliente: 'Client non renseigné',
   historicoHome: 'Historique des rapports',
   historicoHomeDica: 'Consultez et partagez les rapports déjà enregistrés.',
+
+  legalRodapePrivacidade: 'Confidentialité',
+  legalRodapeTermos: 'Conditions d’utilisation',
+  legalRodapeCookies: 'Cookies',
+  legalPrevalencia: 'La version en portugais brésilien prévaut en cas de divergence.',
+  loginAvisoLegal: 'Fournir votre e-mail est une condition d’utilisation. Consultez les documents :',
+  contaPrivacidadeTitulo: 'Confidentialité et vos données',
+  contaPrivacidadeTexto:
+    'Il n’existe aujourd’hui ni export ni suppression en libre-service. Les demandes de la personne concernée vont à macedoartur1250@gmail.com. Détails dans :',
+  configPrivacidadeTitulo: 'Confidentialité et vos données',
+  configPrivacidadeTexto:
+    'Il n’existe aujourd’hui ni export ni suppression en libre-service. Les demandes de la personne concernée vont à macedoartur1250@gmail.com. Détails dans :',
 }
 
 const de: DicionarioTextos = {
@@ -1116,6 +1164,18 @@ const de: DicionarioTextos = {
   historicoSemCliente: 'Kunde nicht angegeben',
   historicoHome: 'Berichtsverlauf',
   historicoHomeDica: 'Prüfen und teilen Sie bereits erfasste Berichte.',
+
+  legalRodapePrivacidade: 'Datenschutz',
+  legalRodapeTermos: 'Nutzungsbedingungen',
+  legalRodapeCookies: 'Cookies',
+  legalPrevalencia: 'Die brasilianische portugiesische Fassung gilt bei Abweichungen.',
+  loginAvisoLegal: 'Die Angabe Ihrer E-Mail ist eine Nutzungsbedingung. Bitte beachten Sie die Dokumente:',
+  contaPrivacidadeTitulo: 'Datenschutz und Ihre Daten',
+  contaPrivacidadeTexto:
+    'Derzeit gibt es keine Selbstbedienungsexport- oder -löschfunktion. Anfragen betroffener Personen gehen an macedoartur1250@gmail.com. Details unter:',
+  configPrivacidadeTitulo: 'Datenschutz und Ihre Daten',
+  configPrivacidadeTexto:
+    'Derzeit gibt es keine Selbstbedienungsexport- oder -löschfunktion. Anfragen betroffener Personen gehen an macedoartur1250@gmail.com. Details unter:',
 }
 
 export const IDIOMAS_TEXTOS: Record<Idioma, DicionarioTextos> = {

@@ -203,6 +203,18 @@ export default function ConfiguracoesPage() {
           </div>
         </Secao>
       </section>
+
+      <section className="card reveal space-y-3 p-5 sm:p-8">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-strong">
+          {t('configPrivacidadeTitulo')}
+        </h2>
+        <p className="text-sm leading-relaxed text-muted">
+          {t('configPrivacidadeTexto')}{' '}
+          <Link href="/privacidade" className="link">
+            {t('legalRodapePrivacidade')}
+          </Link>
+        </p>
+      </section>
     </main>
   )
 }

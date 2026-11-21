@@ -131,6 +131,17 @@ export default function FormularioLogin() {
           </p>
         </div>
 
+        <p className="mt-6 text-xs leading-relaxed text-muted">
+          {t('loginAvisoLegal')}{' '}
+          <Link href="/privacidade" className="link">
+            {t('legalRodapePrivacidade')}
+          </Link>
+          {' · '}
+          <Link href="/termos" className="link">
+            {t('legalRodapeTermos')}
+          </Link>
+        </p>
+
         <div className="divider my-6" />
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <Link href="/" className="link inline-flex min-h-11 items-center">

@@ -132,6 +132,14 @@ export default function PlanosPage() {
       </section>
 
       <p className="text-center text-xs leading-relaxed text-muted">{t('planosAviso')}</p>
+      <p className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-xs text-muted">
+        <Link href="/termos" className="link inline-flex min-h-11 items-center">
+          {t('legalRodapeTermos')}
+        </Link>
+        <Link href="/privacidade" className="link inline-flex min-h-11 items-center">
+          {t('legalRodapePrivacidade')}
+        </Link>
+      </p>
     </main>
   )
 }
