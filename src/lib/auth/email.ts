@@ -12,6 +12,24 @@ const ASSUNTOS: Record<TipoToken, string> = {
   redefinir_senha: 'Redefinição de senha',
 }
 
+export type LinkDemo = {
+  tipo: TipoToken
+  email: string
+  link: string
+  token: string
+  emitidoEm: string
+}
+
+/**
+ * Caixa de entrada do modo demo: somente em memória e somente fora de produção.
+ * Não recebe e-mail como parâmetro, então não revela se uma conta existe.
+ */
+const caixaDemo: LinkDemo[] = []
+
+export function listarLinksDemo(): LinkDemo[] {
+  return caixaDemo.slice(-10).reverse()
+}
+
 export function montarLink(tipo: TipoToken, token: string): string {
   const caminho = tipo === 'verificar_email' ? 'verificar-email' : 'redefinir-senha'
   return `/${caminho}?token=${encodeURIComponent(token)}`
@@ -47,6 +65,16 @@ export async function enviarLink(link: LinkEmail): Promise<ResultadoEnvio> {
   }
 
   if (process.env.NODE_ENV !== 'production') {
+    caixaDemo.push({
+      tipo: link.tipo,
+      email: link.email,
+      link: url,
+      token: link.token,
+      emitidoEm: new Date().toISOString(),
+    })
+    if (caixaDemo.length > 50) {
+      caixaDemo.shift()
+    }
     return { modo: 'demo', link: url, token: link.token }
   }
 

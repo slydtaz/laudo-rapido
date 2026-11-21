@@ -18,6 +18,7 @@ const ROTAS_PUBLICAS = [
   '/api/v1/auth/verificar',
   '/api/v1/auth/senha',
   '/api/v1/auth/google',
+  '/api/v1/auth/demo-links',
   '/api/health',
   '/o',
 ]
