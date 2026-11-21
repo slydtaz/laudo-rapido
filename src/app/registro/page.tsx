@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
 
+import BotaoGoogle from '@/components/BotaoGoogle'
 import { useToast } from '@/components/ToastProvider'
 import { useT } from '@/lib/i18n/useT'
 import { executarOtimista } from '@/lib/ui/acao-otimista'
@@ -168,6 +169,17 @@ export default function PaginaRegistro() {
             </button>
           </form>
         )}
+
+        <div className="divider my-6" />
+        <div className="space-y-3">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted">
+            {t('googleOu')}
+          </p>
+          <BotaoGoogle />
+          <p className="text-center text-xs leading-relaxed text-muted">
+            {t('googleDemoAviso')}
+          </p>
+        </div>
 
         <div className="divider my-6" />
         <div className="flex flex-wrap items-center gap-2 text-sm">

@@ -87,6 +87,10 @@ export const ptBR = {
   contaErro: 'Não foi possível salvar.',
   contaLinkConfig: 'Minha conta',
 
+  googleContinuar: 'Continuar com Google',
+  googleOu: 'ou',
+  googleDemoAviso: 'Sem credenciais configuradas, o modo demo é usado somente em desenvolvimento.',
+
   visitaTitulo: 'Nova visita técnica',
   visitaSubtitulo: 'O rascunho fica salvo neste aparelho até você sincronizar. Não é preciso internet para preencher ou salvar.',
   visitaCliente: 'Cliente',
@@ -301,6 +305,10 @@ const en: DicionarioTextos = {
   contaErro: 'Could not save.',
   contaLinkConfig: 'My account',
 
+  googleContinuar: 'Continue with Google',
+  googleOu: 'or',
+  googleDemoAviso: 'Without configured credentials, demo mode is used in development only.',
+
   visitaTitulo: 'New field visit',
   visitaSubtitulo: 'The draft stays on this device until you sync. You do not need internet to fill or save it.',
   visitaCliente: 'Client',
@@ -511,6 +519,10 @@ const es: DicionarioTextos = {
   contaSalvo: 'Datos guardados.',
   contaErro: 'No se pudieron guardar los datos.',
   contaLinkConfig: 'Mi cuenta',
+
+  googleContinuar: 'Continuar con Google',
+  googleOu: 'o',
+  googleDemoAviso: 'Sin credenciales configuradas, el modo demo se usa solo en desarrollo.',
 
   visitaTitulo: 'Nueva visita técnica',
   visitaSubtitulo: 'El borrador queda guardado en este dispositivo hasta sincronizar. No necesitas internet para rellenarlo ni guardarlo.',
@@ -723,6 +735,10 @@ const fr: DicionarioTextos = {
   contaErro: 'Impossible d’enregistrer les données.',
   contaLinkConfig: 'Mon compte',
 
+  googleContinuar: 'Continuer avec Google',
+  googleOu: 'ou',
+  googleDemoAviso: 'Sans identifiants configurés, le mode démo est utilisé uniquement en développement.',
+
   visitaTitulo: 'Nouvelle visite technique',
   visitaSubtitulo: "Le brouillon reste sur cet appareil jusqu'à la synchronisation. Internet n'est pas nécessaire pour le remplir ou l'enregistrer.",
   visitaCliente: 'Client',
@@ -933,6 +949,10 @@ const de: DicionarioTextos = {
   contaSalvo: 'Daten gespeichert.',
   contaErro: 'Die Daten konnten nicht gespeichert werden.',
   contaLinkConfig: 'Mein Konto',
+
+  googleContinuar: 'Mit Google fortfahren',
+  googleOu: 'oder',
+  googleDemoAviso: 'Ohne konfigurierte Zugangsdaten wird der Demo-Modus nur in der Entwicklung verwendet.',
 
   visitaTitulo: 'Neuer technischer Besuch',
   visitaSubtitulo: 'Der Entwurf bleibt auf diesem Gerät, bis Sie synchronisieren. Zum Ausfüllen und Speichern ist kein Internet nötig.',
