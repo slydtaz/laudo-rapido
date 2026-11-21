@@ -29,7 +29,9 @@ apenas rótulos e descrições são traduzidos.
 
 A condição "até 5 técnicos" é uma **intenção de precificação para fase futura**, não uma
 capacidade implementada. Ela **não aparece na vitrine em nenhum idioma**: os textos de
-`nome`, `dica` e `itens` dos quatro planos são apenas públicos-alvo e recursos existentes.
+`nome` e `dica` descrevem públicos-alvo e intenção comercial, e os de `itens` listam só
+recursos que existem hoje. Expressões como "Uso compartilhado da conta" e "Organização por
+empresa" descrevem o modelo pretendido, não uma gestão de equipe implementada.
 Hoje não existe associação de técnicos a uma conta, limite técnico aplicado nem cobrança
 por usuário. Se a condição for mantida quando a cobrança entrar, ela deverá ser apresentada
 na tela pré-contratual como termo comercial — nunca como recurso entregue.
