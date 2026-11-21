@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import Skeleton from '@/components/Skeleton'
 import { useToast } from '@/components/ToastProvider'
@@ -10,6 +10,7 @@ import type { Idioma } from '@/lib/config/preferencias'
 import { useT, type Tradutor } from '@/lib/i18n/useT'
 import { executarOtimista } from '@/lib/ui/acao-otimista'
 import { filtrarVisitas, type StatusHistorico, type VisitaHistorico } from '@/lib/visita/filtro'
+import { useVisitas } from '@/lib/visita/useVisitas'
 
 const LOCAIS: Record<Idioma, string> = {
   ptBR: 'pt-BR',
@@ -41,36 +42,9 @@ export default function HistoricoPage() {
   const t = useT()
   const { avisar } = useToast()
   const { preferencias } = usePreferencias()
-  const [visitas, setVisitas] = useState<VisitaHistorico[]>([])
+  const { visitas, carregando, falhou, atualizadoEm, recarregar } = useVisitas()
   const [termo, setTermo] = useState('')
   const [status, setStatus] = useState<StatusHistorico>('todos')
-  const [carregando, setCarregando] = useState(true)
-  const [falhou, setFalhou] = useState(false)
-  const [tentativa, setTentativa] = useState(0)
-
-  const carregar = useCallback(async (sinal: AbortSignal) => {
-    setCarregando(true)
-    setFalhou(false)
-    try {
-      const resposta = await fetch('/api/v1/visitas', { signal: sinal })
-      if (!resposta.ok) throw new Error('histórico indisponível')
-      const corpo = (await resposta.json()) as { visitas?: VisitaHistorico[] }
-      setVisitas(Array.isArray(corpo.visitas) ? corpo.visitas : [])
-    } catch (erro) {
-      if ((erro as Error).name !== 'AbortError') {
-        setFalhou(true)
-        setVisitas([])
-      }
-    } finally {
-      if (!sinal.aborted) setCarregando(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    const controle = new AbortController()
-    void carregar(controle.signal)
-    return () => controle.abort()
-  }, [carregar, tentativa])
 
   const visiveis = useMemo(
     () => filtrarVisitas(visitas, termo, status),
@@ -90,6 +64,9 @@ export default function HistoricoPage() {
 
   const formatoData = new Intl.DateTimeFormat(LOCAIS[preferencias.idioma], {
     dateStyle: 'medium',
+  })
+  const formatoHora = new Intl.DateTimeFormat(LOCAIS[preferencias.idioma], {
+    timeStyle: 'short',
   })
 
   return (
@@ -155,7 +132,7 @@ export default function HistoricoPage() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => setTentativa((atual) => atual + 1)}
+            onClick={recarregar}
           >
             {t('historicoTentar')}
           </button>
@@ -166,9 +143,16 @@ export default function HistoricoPage() {
         </section>
       ) : (
         <>
-          <p className="text-sm font-medium text-muted">
-            {t('historicoResultados', { n: visiveis.length })}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium text-muted">
+              {t('historicoResultados', { n: visiveis.length })}
+            </p>
+            {atualizadoEm && (
+              <p className="text-xs text-muted" aria-live="polite">
+                {t('histAtualizado', { hora: formatoHora.format(atualizadoEm) })}
+              </p>
+            )}
+          </div>
           <section className="grid gap-4 lg:grid-cols-2">
             {visiveis.map((visita, indice) => {
               const cliente = textoCampo(visita.dados?.cliente) || t('historicoSemCliente')
