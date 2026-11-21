@@ -78,6 +78,11 @@ export default function FormularioLogin() {
         <h1>{t('loginTitulo')}</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">{t('loginSubtitulo')}</p>
 
+        <aside role="status" className="card mt-4 p-4 text-sm">
+          <p className="font-semibold">{t('loginAvisoManutencaoTitulo')}</p>
+          <p className="mt-1 text-muted">{t('loginAvisoManutencaoTexto')}</p>
+        </aside>
+
         <form onSubmit={entrar} className="mt-8 space-y-5">
           <div>
             <label htmlFor="email" className="label">
