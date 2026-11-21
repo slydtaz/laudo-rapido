@@ -147,4 +147,27 @@ describe('aviso de atualização do PWA', () => {
     mock.dispararSW('controllerchange')
     expect(reload).toHaveBeenCalledTimes(1)
   })
+
+  it('recarrega quando o worker ativa após o aceite, mesmo sem controllerchange', async () => {
+    renderRegistrador()
+
+    await waitFor(() => {
+      expect(mock.register).toHaveBeenCalledWith('/sw.js', { updateViaCache: 'none' })
+    })
+
+    mock.dispararRegistro('updatefound')
+    mock.worker.state = 'installed'
+    mock.dispararWorker('statechange')
+
+    expect(await screen.findByText('Nova versão disponível')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
+    mock.worker.state = 'activated'
+    mock.dispararWorker('statechange')
+
+    expect(reload).toHaveBeenCalledTimes(1)
+
+    mock.dispararSW('controllerchange')
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
 })

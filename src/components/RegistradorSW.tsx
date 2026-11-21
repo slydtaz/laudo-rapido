@@ -61,10 +61,24 @@ export default function RegistradorSW() {
     }
 
     const aoStateChange = () => {
-      if (cancelado || !worker || worker.state !== 'installed' || workerRef.current) return
-      workerRef.current = worker
-      avisarRef.current(mensagemRef.current, 'info')
-      setMostrarAtualizar(true)
+      if (cancelado || !worker) return
+
+      if (!workerRef.current && worker.state === 'installed') {
+        workerRef.current = worker
+        avisarRef.current(mensagemRef.current, 'info')
+        setMostrarAtualizar(true)
+        return
+      }
+
+      if (
+        workerRef.current === worker &&
+        worker.state === 'activated' &&
+        aceitouAtualizacaoRef.current &&
+        !recarregadoRef.current
+      ) {
+        recarregadoRef.current = true
+        location.reload()
+      }
     }
 
     const aoUpdateFound = () => {

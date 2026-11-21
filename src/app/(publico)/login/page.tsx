@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { acessoOuErro, exigirAcesso } from '@/lib/auth/acesso'
 
 import FormularioLogin from './FormularioLogin'
+import RegistradorSW from '@/components/RegistradorSW'
 
 /**
  * /login é pública, mas não pode virar porta dos fundos: com e-mail liberado o
@@ -27,5 +28,10 @@ export default async function PaginaLogin() {
     redirect('/em-desenvolvimento')
   }
 
-  return <FormularioLogin />
+  return (
+    <>
+      <RegistradorSW />
+      <FormularioLogin />
+    </>
+  )
 }

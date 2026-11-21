@@ -3,7 +3,6 @@ import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
 
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
-import RegistradorSW from '@/components/RegistradorSW'
 import RodapeLegal from '@/components/RodapeLegal'
 import ToastProvider from '@/components/ToastProvider'
 
@@ -72,7 +71,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <ProvedorPreferencias>
           <ToastProvider>
-            <RegistradorSW />
             {children}
             <RodapeLegal />
           </ToastProvider>
