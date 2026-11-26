@@ -10,7 +10,7 @@ import PaginaPrivacidade from '@/app/(publico)/privacidade/page'
 import PaginaTermos from '@/app/(publico)/termos/page'
 import ProvedorPreferencias from '@/components/ProvedorPreferencias'
 
-const VIGENCIA = '21/11/2026'
+const VIGENCIA = '22/11/2026'
 const AVISO_PTBR = 'A versão em português do Brasil prevalece em caso de divergência.'
 
 const PAGINAS = [

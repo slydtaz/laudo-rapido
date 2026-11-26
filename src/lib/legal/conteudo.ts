@@ -10,7 +10,7 @@ export type DocumentoLegal = {
   secoes: SecaoLegal[]
 }
 
-const VIGENCIA = '21/11/2026'
+const VIGENCIA = '22/11/2026'
 const AVISO_PTBR = 'A versão em português do Brasil prevalece em caso de divergência.'
 const CONTATO = 'macedoartur1250@gmail.com'
 const CONTROLADOR = 'Artur Fernandes Macêdo Vinhas'
@@ -72,7 +72,7 @@ export const DOCUMENTOS: Record<'privacidade' | 'termos' | 'cookies', DocumentoL
       {
         titulo: 'Transferência internacional',
         paragrafos: [
-          'Alguns operadores podem processar dados fora do Brasil. Nesses casos, exigimos garantias contratuais de proteção equivalentes às da LGPD, na forma da Resolução ANPD nº 19/2024, incluindo cláusulas-padrão quando necessárias.',
+          'Alguns operadores podem processar dados fora do Brasil. Quando isso ocorre, informamos a finalidade, o país de destino e o mecanismo de proteção adotado, nos termos da Resolução ANPD nº 19/2024. A relação dos operadores e o status da documentação de transferência ficam registrados no dossiê de conformidade deste serviço; solicitações de informação podem ser feitas pelo canal público de contato.',
         ],
       },
       {
