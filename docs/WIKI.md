@@ -21,5 +21,5 @@ Os SHAs recuperados dos metadados da Vercel estão listados em [DEPLOY_HISTORY.m
 ## Convenções
 
 - Não versionar `.env`, tokens, chaves ou valores de variáveis de ambiente.
-- Não publicar este repositório sem nova autorização explícita.
+- Repositório público por decisão explícita; qualquer mudança de conteúdo deve passar por revisão de segredos.
 - Alterações de documentação devem usar o template `doc_change`.

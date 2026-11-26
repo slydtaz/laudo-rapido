@@ -16,7 +16,7 @@ The deploy history is in [docs/DEPLOY_HISTORY.md](docs/DEPLOY_HISTORY.md). Archi
 
 ## Visibilidade
 
-	ool-foundry é público (estado pré-existente); os demais repositórios desta iniciativa são privados. Nenhum outro deve ser tornado público sem instrução explícita e revisão de segredos.
+Público por decisão explícita do usuário.
 
 ## Comandos
 

@@ -6,6 +6,7 @@ Fonte editável recuperada em: `C:\Users\MARY\OneDrive\Desktop\agents code works
 
 | URL | target | SHA | message/intent | date | source |
 |---|---|---|---|---|---|
+| laudo-rapido-q4k9p1zgv-slydtx.vercel.app | production | c4c1a426684575b01771f673be14239274d22823 | docs: add wiki, deploy history, issue templates and recovered source | 2026-11-26 | Vercel deploy metadata |
 | laudo-rapido-c1lvg9dmb-slydtx.vercel.app | production | fe64e1dd5d6306c6569f2d679e29c6d0f6c0fb92 | docs: add wiki, deploy history, issue templates and recovered source | 2026-11-26 | Vercel deploy metadata |
 | laudo-rapido-1ged7ho4v-slydtx.vercel.app | preview | — | — | 2026-11-26 | Vercel deploy metadata |
 | laudo-rapido-452iwqkan-slydtx.vercel.app | production | e1dad1efa61843b51f556e43bef137d4985f2cca | feat(login): adiciona card de alerta de acesso restrito | 2026-11-26 | Vercel deploy metadata |
