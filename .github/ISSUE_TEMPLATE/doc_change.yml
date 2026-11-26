@@ -1,5 +1,5 @@
-﻿name: Alterar documentaÃ§Ã£o
-description: Sugira uma correÃ§Ã£o ou acrÃ©scimo na documentaÃ§Ã£o de laudo-rapido
+name: Alterar documentação
+description: Sugira uma correção ou acréscimo na documentação de laudo-rapido
 title: "[docs]: "
 labels: ["documentation"]
 body:
@@ -17,6 +17,6 @@ body:
   - type: textarea
     id: change
     attributes:
-      label: MudanÃ§a proposta
+      label: Mudança proposta
     validations:
       required: true

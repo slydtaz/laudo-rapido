@@ -1,4 +1,4 @@
-﻿name: Relatar bug
+name: Relatar bug
 description: Reporte um comportamento incorreto em laudo-rapido
 title: "[bug]: "
 labels: ["bug"]
